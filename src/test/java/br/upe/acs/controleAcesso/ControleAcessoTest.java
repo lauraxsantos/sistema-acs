@@ -38,8 +38,7 @@ public class ControleAcessoTest {
 	@BeforeEach
 	void setup() {
 		MockitoAnnotations.initMocks(this); // Inicializar as anotações Mockito
-		registro = new RegistroDTO("Emilio", "69851309095", "698513", 2, "87991234693", 
-				"teste@hotmail.com", "12345678", "56280000", "Rua X", "Bairro X", "Cidade X", "Pe", 10, (long) 134);
+		registro = new RegistroDTO();
 	}
 	
 	@Test

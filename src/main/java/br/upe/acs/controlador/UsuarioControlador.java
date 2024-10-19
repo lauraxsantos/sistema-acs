@@ -26,7 +26,7 @@ public class UsuarioControlador {
     @Operation(
             summary = "Buscar usuário por id",
             description = "Esta rota permite buscar um usuário via seu id. As informações retornadas incluem " +
-                    "informações como id, nome completo, número de matricula, telefone, email, perfis, curso, " +
+                    "informações como id, nome completo, endereço, número de matricula, telefone, email, perfis, curso, " +
                     "periodo e se é verificado. Essa rota séra util para gerenciamento de usuarios."
     )
     @GetMapping("/{id}")
