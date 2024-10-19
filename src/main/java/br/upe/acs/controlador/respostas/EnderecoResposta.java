@@ -27,7 +27,7 @@ public class EnderecoResposta {
 		this.rua = endereco.getRua();
 		this.bairro = endereco.getBairro();
 		this.cidade = endereco.getCidade();
-		UF = endereco.getUF();
+		this.UF = endereco.getUF();
 		this.numero = endereco.getNumero();
 	}
 	
