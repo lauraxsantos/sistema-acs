@@ -28,7 +28,7 @@ public class EnderecoServico {
 		return repositorio.save(enderecoSalvar);
 	}
 
-	public ViaCepDTO buscarEnderecoPorCep(String cep) throws CepInvalidoExcecao {
+	public ViaCepDTO buscarEnderecoPorCep(String cep) {
 		ViaCepDTO viaCepDTO;
 
 		try {

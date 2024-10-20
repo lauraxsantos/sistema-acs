@@ -19,11 +19,7 @@ public class CursoServico {
 		return repositorio.findAll();
 	}
 	
-	public Curso buscarCursoPorId(Long id) throws AcsExcecao {
-		if (repositorio.findById(id).isEmpty()) {
-			throw new AcsExcecao("Não existe um curso associado a este id!");
-		}
-		
-		return repositorio.findById(id).get();
+	public Curso buscarCursoPorId(Long id) {
+		return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Curso não encontrado"));
 	}
 }

@@ -19,27 +19,15 @@ public class RequisicaoPDFControlador {
 
     private final RequisicaoPDFCasoDeUso casoDeUso;
 
-    @Operation(
-            summary = "Baixar pdf de uma requisição",
-            description = "Descrição: Através deste endpoint, o usuário pode fazer o download da requisição em formato PDF.\n" +
-                    "Pré-condições: O usuário deve estar logado e selecionar a opção de fazer download do arquivo em PDF.\n" +
-                    "Pós-condições: O usuário vê o arquivo baixado na pasta selecionada."
-    )
+    @Operation(summary = "Baixar pdf de uma requisição")
     @PostMapping("{id}/pdf")
     public ResponseEntity<?> gerarRequisicaoPDF(@PathVariable("id") Long requisicaoId) {
-        ResponseEntity<?> resposta;
-
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDisposition(ContentDisposition.attachment()
-                    .filename("requisição" + requisicaoId + ".pdf").build());
-            resposta = ResponseEntity.ok().headers(headers).body(casoDeUso.gerarRequisicaoPDF(requisicaoId));
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+    	
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.attachment()
+        		.filename("requisição" + requisicaoId + ".pdf").build());
+        return ResponseEntity.ok().headers(headers).body(casoDeUso.gerarRequisicaoPDF(requisicaoId));
     }
 
 }

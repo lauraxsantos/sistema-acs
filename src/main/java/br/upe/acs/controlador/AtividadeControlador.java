@@ -29,61 +29,29 @@ public class AtividadeControlador {
 
     private final AtividadeServico servico;
 
-    @Operation(summary = "Listar todas as atividades",
-            description = "Esse endpoint deve retornar todas as atividades existentes no banco de dados do sistema de Acs\n"
-                    + "\nPré-condições: É necessário que o usuário esteja logado e verificado no sistema.\n"
-                    + "\nPós-condições: Nenhuma")
+    @Operation(summary = "Listar todas as atividades")
     @GetMapping
     public ResponseEntity<List<AtividadeResposta>> listarAtividades() {
         return ResponseEntity.ok(servico.listarAtividades().stream().map(AtividadeResposta::new)
                 .collect(Collectors.toList()));
     }
 
-    @Operation(summary = "Buscar atividade por id",
-            description = "Esse endpoint deve retornar a atividade correspondente ao id informado.\n"
-                    + "\nPré-condição: É necessário que o usuário esteja logado e verificado no sistema. \n"
-                    + "\nPós-condição: Nenhuma")
+    @Operation(summary = "Buscar atividade por id")
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscarAtividadePorId(@PathVariable("id") Long id) {
-        ResponseEntity<?> resposta;
-        try {
-            AtividadeResposta atividadeResposta = new AtividadeResposta(servico.buscarAtividadePorId(id));
-            resposta = ResponseEntity.ok(atividadeResposta);
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+    public ResponseEntity<AtividadeResposta> buscarAtividadePorId(@PathVariable("id") Long id) throws AcsExcecao {
+        return ResponseEntity.ok(new AtividadeResposta(servico.buscarAtividadePorId(id)));
     }
 
-    @Operation(summary = "Buscar atividades por eixo", description = "Esse endpoint deve retornar a atividade correspondente ao eixo informado.\n"
-            + "\nPré-condição: É necessário que o usuário esteja logado e verificado no sistema. \n"
-            + "\nPós-condição: Nenhuma")
+    @Operation(summary = "Buscar atividades por eixo")
     @GetMapping("/eixo")
-    public ResponseEntity<?> buscarAtividadePorEixo(@RequestParam String eixo){
-    	ResponseEntity<?> resposta;
-    	try {
-    		resposta = ResponseEntity.ok(servico.buscarAtividadePorEixo(eixo).stream().map(AtividadeResposta::new).toList());
-    	} catch(AcsExcecao e) {
-    		resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-    	}
-    	return resposta;
+    public ResponseEntity<List<AtividadeResposta>> buscarAtividadePorEixo(@RequestParam String eixo){
+    	return ResponseEntity.ok(servico.buscarAtividadePorEixo(eixo).stream().map(AtividadeResposta::new).toList());
     }
 
-    @Operation(
-            summary = "Criar uma nova atividade",
-            description = "Descrição massa"
-    )
+    @Operation(summary = "Criar uma nova atividade")
     @PostMapping
-    public ResponseEntity<?> criarAtividade(@RequestBody AtividadeDTO atividade) {
-        ResponseEntity<?> resposta;
-
-        try {
-            resposta = ResponseEntity.ok(new AtividadeResposta(servico.criarAtividade(atividade)));
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-        return resposta;
+    public ResponseEntity<AtividadeResposta> criarAtividade(@RequestBody AtividadeDTO atividade) {
+        return ResponseEntity.ok(new AtividadeResposta(servico.criarAtividade(atividade)));
     }
 
     @Operation(summary = "Alterar atividade")
@@ -93,29 +61,16 @@ public class AtividadeControlador {
             @PathVariable("id") Long id,
             @RequestBody AtividadeDTO atividadeDTO
     ) {
-        ResponseEntity<?> resposta;
-        try {
-            resposta = ResponseEntity.ok(new AtividadeResposta(servico.alterarAtividade(id, atividadeDTO)));
-        } catch (Exception e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+        return ResponseEntity.ok(new AtividadeResposta(servico.alterarAtividade(id, atividadeDTO)));
     }
 
 
     @Operation(summary = "Excluir atividade")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> excluirAtividade(HttpServletRequest request, @PathVariable("id") Long id) {
-        ResponseEntity<?> resposta;
-        try {
-            servico.excluirAtividade(id);
-            resposta = ResponseEntity.noContent().build();
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
+    	servico.excluirAtividade(id);
+        return ResponseEntity.noContent().build();
 
-        return resposta;
     }
 
 }

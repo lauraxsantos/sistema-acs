@@ -19,6 +19,8 @@ import br.upe.acs.dominio.Certificado;
 import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.repositorio.CertificadoRepositorio;
 import br.upe.acs.utils.AcsExcecao;
+import br.upe.acs.utils.ConverterArquivoExcecao;
+import br.upe.acs.utils.FormatoInvalidoExcecao;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -31,43 +33,44 @@ public class CertificadoServico {
 
 	private final AtividadeServico atividadeServico;
 
-	public Certificado buscarCertificadoPorId(Long id) throws AcsExcecao {
-		Optional<Certificado> certificado = repositorio.findById(id);
-		if (certificado.isEmpty()) {
-			throw new AcsExcecao("Não existe um certificado associado a este id!");
-		}
-
-		return certificado.get();
+	public Certificado buscarCertificadoPorId(Long id) {
+		return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Certificado não encontrado"));
 	}
 
-	public byte[] buscarPdfDoCertificadoPorId(Long certificadoId) throws AcsExcecao {
+	public byte[] buscarPdfDoCertificadoPorId(Long certificadoId) {
 		Certificado certificado = buscarCertificadoPorId(certificadoId);
 		return certificado.getCertificado();
 	}
 
-	public Long adicionarCertificado(MultipartFile file, Long requisicaoId, String email) throws AcsExcecao, IOException {
+	public Long adicionarCertificado(MultipartFile file, Long requisicaoId, String email) {
 		Requisicao requisicao = requisicaoServico.buscarRequisicaoPorId(requisicaoId);
 
 		if (!Objects.equals(file.getContentType(), "application/pdf")) {
-			throw new AcsExcecao("É aceito somente pdf!");
+			throw new FormatoInvalidoExcecao("É aceito somente pdf!");
 		}
 
 		if (!requisicao.getUsuario().getEmail().equals(email)) {
-			throw new AcsExcecao("Esse id não pertence a nenhuma requisição do aluno!");
+			throw new FormatoInvalidoExcecao("Esse id não pertence a nenhuma requisição do aluno!");
 		}
 
 		if (requisicao.getStatusRequisicao() != RequisicaoStatusEnum.RASCUNHO) {
-			throw new AcsExcecao("Essa requisição já foi submetida e não pode anexar novos certificados!");
+			throw new FormatoInvalidoExcecao("Essa requisição já foi submetida e não pode anexar novos certificados!");
 		}
 
 		if (requisicao.getCertificados().size() >= 10) {
-			throw new AcsExcecao("Essa requisição já possui muitos certificados!");
+			throw new FormatoInvalidoExcecao("Essa requisição já possui muitos certificados!");
 		}
 
-		byte[] fileBytes = file.getBytes();
+		   byte[] fileBytes;
+		   
+	        try {
+	            fileBytes = file.getBytes();
+	        } catch (IOException e) {
+	            throw new ConverterArquivoExcecao(e.getMessage());
+	        }
 
 		if (certificadoUnico(requisicao, fileBytes)) {
-			throw new AcsExcecao("Essa certificado já foi cadastrado!");
+			throw new FormatoInvalidoExcecao("Essa certificado já foi cadastrado!");
 		}
 
 		Certificado certificado = new Certificado();
@@ -78,10 +81,10 @@ public class CertificadoServico {
 		return certificadoSalvo.getId();
 	}
 
-	public void alterarCertificado(Long certificadoId, CertificadoDTO certificadoDTO, String email) throws AcsExcecao, ParseException {
+	public void alterarCertificado(Long certificadoId, CertificadoDTO certificadoDTO, String email) {
 		Certificado certificado = buscarCertificadoPorId(certificadoId);
 		if (!certificado.getRequisicao().getUsuario().getEmail().equals(email)) {
-			throw new AcsExcecao("Esse id não pertence a nenhuma certificado do aluno!");
+			throw new AcsExcecao("Certificado não encontrado");
 		}
 		Atividade atividade = null;
 		if (certificadoDTO.getAtividadeId() != 0) {
@@ -106,7 +109,7 @@ public class CertificadoServico {
 	public void excluirCertificado(Long certificadoId, String email) throws AcsExcecao {
 		Certificado certificado = buscarCertificadoPorId(certificadoId);
 		if (!certificado.getRequisicao().getUsuario().getEmail().equals(email)) {
-			throw new AcsExcecao("Usuário sem premissão para excluir esse certificado!");
+			throw new AcsExcecao("Certificado não encontrado");
 		}
 
 		if (!certificado.getStatusCertificado().equals(CertificadoStatusEnum.RASCUNHO)) {
@@ -115,9 +118,13 @@ public class CertificadoServico {
 		repositorio.deleteById(certificadoId);
 	}
 
-	private static Date converterParaData(String dataString) throws ParseException {
-		SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
-		return formato.parse(dataString);
+	private static Date converterParaData(String dataString) {
+		SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");			
+		try {
+			return formato.parse(dataString);
+		} catch (ParseException e) {
+            throw new AcsExcecao(e.getMessage());
+        }
 	}
 
 	private boolean certificadoUnico(Requisicao requisicao, byte[] bytes) {
