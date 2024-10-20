@@ -37,6 +37,10 @@ public class RequisicaoControladorTest {
 
         // Simula o comportamento do jwtService.extractUsername
         when(jwtService.extractUsername(anyString())).thenReturn("user@example.com");
+        
+       // Long idRequisicao = 1L;
+        // Simula o comportamento do requisicaoServico.adicionarRequisicao
+     //   when(requisicaoServico.adicionarRequisicao(anyString())).thenReturn(idRequisicao);
 
      
 
