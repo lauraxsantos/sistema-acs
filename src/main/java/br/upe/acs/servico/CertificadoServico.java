@@ -89,10 +89,17 @@ public class CertificadoServico {
 	}
 
 	public void alterarCertificado(Long certificadoId, CertificadoDTO certificadoDTO, String email) throws AcsExcecao, ParseException {
+		Date dataInicial = converterParaData(certificadoDTO.getDataInicial());
+	    Date dataFinal = converterParaData(certificadoDTO.getDataFinal());
 		Certificado certificado = buscarCertificadoPorId(certificadoId);
 		if (!certificado.getRequisicao().getUsuario().getEmail().equals(email)) {
-			throw new AcsExcecao("Esse id não pertence a nenhuma certificado do aluno!");
+			throw new AcsExcecao("Esse id não pertence a nenhuma certificado do aluno!");	
 		}
+		
+		 if (dataFinal.before(dataInicial)) {
+		        throw new AcsExcecao("A data final não pode ser anterior à data inicial!");
+		    }
+		
 		Atividade atividade = null;
 		if (certificadoDTO.getAtividadeId() != 0) {
 			atividade = atividadeServico.buscarAtividadePorId(certificadoDTO.getAtividadeId());
