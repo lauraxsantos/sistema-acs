@@ -31,6 +31,8 @@ public class CertificadoServico {
 
 	private final AtividadeServico atividadeServico;
 
+	private final CertificadoDTO certificadoDTO;
+
 	public Certificado buscarCertificadoPorId(Long id) throws AcsExcecao {
 		Optional<Certificado> certificado = repositorio.findById(id);
 		if (certificado.isEmpty()) {
@@ -45,8 +47,10 @@ public class CertificadoServico {
 		return certificado.getCertificado();
 	}
 
-	public Long adicionarCertificado(MultipartFile file, Long requisicaoId, String email) throws AcsExcecao, IOException {
+	public Long adicionarCertificado(MultipartFile file, Long requisicaoId, String email) throws AcsExcecao, IOException, ParseException {
 		Requisicao requisicao = requisicaoServico.buscarRequisicaoPorId(requisicaoId);
+		Date dataInicial = converterParaData(certificadoDTO.getDataInicial());
+	    Date dataFinal = converterParaData(certificadoDTO.getDataFinal());
 
 		if (!Objects.equals(file.getContentType(), "application/pdf")) {
 			throw new AcsExcecao("É aceito somente pdf!");
@@ -63,6 +67,10 @@ public class CertificadoServico {
 		if (requisicao.getCertificados().size() >= 10) {
 			throw new AcsExcecao("Essa requisição já possui muitos certificados!");
 		}
+		
+		 if (dataFinal.before(dataInicial)) {
+		        throw new AcsExcecao("A data final não pode ser anterior à data inicial!");
+		    }
 
 		byte[] fileBytes = file.getBytes();
 
@@ -71,6 +79,8 @@ public class CertificadoServico {
 		}
 
 		Certificado certificado = new Certificado();
+		certificado.setDataInicial(dataInicial);
+	    certificado.setDataFinal(dataFinal);
 		certificado.setCertificado(fileBytes);
 		certificado.setRequisicao(requisicao);
 		certificado.setStatusCertificado(CertificadoStatusEnum.RASCUNHO);
@@ -91,8 +101,8 @@ public class CertificadoServico {
 		certificado.setTitulo(certificadoDTO.getTitulo());
 		certificado.setAtividade(atividade);
 
-		if (certificadoDTO.getDataIncial() != null) {
-			certificado.setDataInicial(converterParaData(certificadoDTO.getDataIncial()));
+		if (certificadoDTO.getDataInicial() != null) {
+			certificado.setDataInicial(converterParaData(certificadoDTO.getDataInicial()));
 		}
 
 		if (certificadoDTO.getDataFinal() != null) {

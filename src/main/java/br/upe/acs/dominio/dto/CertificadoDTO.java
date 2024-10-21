@@ -11,7 +11,7 @@ public class CertificadoDTO {
 
 	private String titulo;
 		
-	private String dataIncial;
+	private String dataInicial;
 
 	private String dataFinal;
 	
