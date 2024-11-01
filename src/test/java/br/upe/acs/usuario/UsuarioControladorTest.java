@@ -10,7 +10,7 @@ import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.dto.AlterarSenhaDTO;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.repositorio.UsuarioRepositorio;
-import br.upe.acs.servico.ControleAcessoServico;
+
 import br.upe.acs.servico.UsuarioServico;
 import br.upe.acs.utils.AcsExcecao;
 import jakarta.servlet.http.HttpServletRequest;
