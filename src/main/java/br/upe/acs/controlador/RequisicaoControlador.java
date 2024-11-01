@@ -25,115 +25,73 @@ public class RequisicaoControlador {
 
     private final JwtService jwtService;
 
-    @Operation(
-            summary = "Listar todas as requisições",
-            description = "Descrição: Através deste endpoint, pode-se visualizar todas as requisições do sistema."
-    )
+    @Operation(summary = "Listar todas as requisições")
     @GetMapping
     public ResponseEntity<List<RequisicaoResposta>> listarRequisicoes() {
         return ResponseEntity.ok(servico.listarRequisicoes().stream().filter(requisicao -> !requisicao.isArquivada())
                 .map(RequisicaoResposta::new).toList());
     }
 
-    @Operation(
-            summary = "Listar as requisições com paginação",
-            description = "Descrição: Através deste endpoint, o usuário pode visualizar sua lista de requisições com paginação.\n" +
-                    "Pré-condições: O usuário deve estar logado para utilizar o endpoint.\n" +
-                    "Pós-condições: Caso selecione alguma requisição, o usuário é redirecionado para a tela da requisição selecionada."
-    )
+    @Operation(summary = "Listar as requisições com paginação")
     @GetMapping("/paginacao")
     public ResponseEntity<Map<String, Object>> listarRequisicoesPaginas(@RequestParam(defaultValue = "0") int pagina,
                                                                         @RequestParam(defaultValue = "10") int quantidade) {
         return ResponseEntity.ok(servico.listarRequisicoesPaginadas(pagina, quantidade));
     }
 
-    @Operation(
-            summary = "Listar as requisições de um usuário específico",
-            description = "Descrição: Através deste endpoint, o usuário pode visualizar sua lista de requisições.\n" +
-                    "Pré-condições: O usuário deve estar logado para utilizar o endpoint.\n" +
-                    "Pós-condições: Caso selecione alguma requisição, o usuário é redirecionado para a tela da requisição selecionada."
-    )
+    @Operation(summary = "Listar as requisições de um usuário específico")
     @GetMapping("/usuario/{id}")
-    public ResponseEntity<?> listarRequisicoesPorAluno(@PathVariable("id") Long alunoId) {
-        try {
-            return ResponseEntity.ok(servico.listarRequisicoesPorAluno(alunoId).stream()
-                    .filter(requisicao -> !requisicao.isArquivada()).map(RequisicaoResposta::new).toList());
-        } catch (AcsExcecao e) {
-            return ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
+    public ResponseEntity<List<RequisicaoResposta>> listarRequisicoesPorAluno(@PathVariable("id") Long alunoId) {
+    	return ResponseEntity.ok(servico.listarRequisicoesPorAluno(alunoId).stream().filter(requisicao -> !requisicao.isArquivada()).map(RequisicaoResposta::new).toList());
     }
 
-    @Operation(
-            summary = "Buscar requisição por id",
-            description = "Descrição: Através dest endpoint, o usuário pode visualizar uma requisição específica.\n" +
-                    "Pré-condições: O usuário deve estar logado.\n" +
-                    "Pós-condições: O usuário é redirecionado para a tela da requisição selecionada."
-    )
+    @Operation(summary = "Buscar requisição por id")
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscarRequisicaoPorId(@PathVariable("id") Long id) {
-        try {
-            RequisicaoResposta requisicaoResposta = new RequisicaoResposta(servico.buscarRequisicaoPorId(id));
-            return ResponseEntity.ok(requisicaoResposta);
-        } catch (AcsExcecao e) {
-            return ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
+    public ResponseEntity<RequisicaoResposta> buscarRequisicaoPorId(@PathVariable("id") Long id) {
+    	return ResponseEntity.ok(new RequisicaoResposta(servico.buscarRequisicaoPorId(id)));
     }
 
-    @Operation(
-            summary = "Listar requisições arquivadas",
-            description = "Descrição: Através deste endpoint, o usuário pode visualizar sua lista de requisições arquivadas.\n" +
-                    "Pré-condições: O usuário deve estar logado para utilizar o endpoint.\n" +
-                    "Pós-condições: Caso selecione alguma requisição, o usuário é redirecionado para a tela da requisição selecionada."
-    )
+    @Operation(summary = "Listar requisições arquivadas")
     @GetMapping("/arquivar")
-    public ResponseEntity<?> listarRequisicoesArquivadas(HttpServletRequest request) {
-        ResponseEntity<?> resposta;
+    public ResponseEntity<List<RequisicaoResposta>> listarRequisicoesArquivadas(HttpServletRequest request) {
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-        try {
-            resposta = ResponseEntity.ok(servico.listarRequisicoesArquivadas(email)
-                    .stream().map(RequisicaoResposta::new).toList());
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(e.getMessage());
-        }
-
-        return resposta;
+        return ResponseEntity.ok(servico.listarRequisicoesArquivadas(email)
+        		.stream().map(RequisicaoResposta::new).toList());
     }
 
-    @Operation(
-            summary = "Arquivar requisição",
-            description = "Descrição: Através deste endpoint, o usuário pode arquivar uma requisição.\n" +
-                    "Pré-condições: O usuário deve estar logado.\n" +
-                    "Pós-condições: O usuário recebe uma mensagem de confirmação de requisição arquivada."
-    )
+    @Operation(summary = "Arquivar requisição")
     @PostMapping("/arquivar/{id}")
-    public ResponseEntity<?> arquivarRequisicao(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> resposta;
+    public ResponseEntity<MensagemUtil> arquivarRequisicao(@PathVariable Long id, HttpServletRequest request) {
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-        try {
-            resposta = ResponseEntity.ok(new MensagemUtil(servico.arquivarRequisicao(id, email)));
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(e.getMessage());
-        }
-        return resposta;
+        return ResponseEntity.ok(new MensagemUtil(servico.arquivarRequisicao(id, email)));
     }
 
-    @Operation(
-            summary = "Desarquivar requisição",
-            description = "Descrição: Através deste endpoint, o usuário pode desarquivar uma requisição.\n" +
-                    "Pré-condições: O usuário deve estar logado.\n" +
-                    "Pós-condições: O usuário recebe uma mensagem de confirmação de requisição desarquivada."
-    )
+    @Operation(summary = "Desarquivar requisição")
     @PostMapping("/desarquivar/{id}")
     public ResponseEntity<?> desarquivarRequisicao(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> resposta;
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-        try {
-            resposta = ResponseEntity.ok(new MensagemUtil(servico.desarquivarRequisicao(id, email)));
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(e.getMessage());
-        }
-
-        return resposta;
+        return ResponseEntity.ok(new MensagemUtil(servico.desarquivarRequisicao(id, email)));
     }
     
+    @Operation(summary = "Adicionar requisição")
+    @PostMapping
+    public ResponseEntity<?> adicionarRequisicao(HttpServletRequest request) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        return ResponseEntity.status(201).body(servico.adicionarRequisicao(email));
+
+    }
+
+    @Operation(summary = "Submissão de requisição")
+    @PutMapping("/submissão/{id}")
+    public ResponseEntity<MensagemUtil> submeterRequisicao(@PathVariable("id") Long requisicaoId) {
+        return ResponseEntity.ok(new MensagemUtil(servico.submeterRequisicao(requisicaoId)));
+    }
+
+    @Operation(summary = "Excluir requisição")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> excluirRequisicao(HttpServletRequest request, @PathVariable("id") Long requisicaoId) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        servico.excluirRequisicao(requisicaoId, email);
+        return ResponseEntity.noContent().build();
+    }
 }

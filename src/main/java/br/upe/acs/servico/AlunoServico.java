@@ -8,6 +8,7 @@ import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.vo.AtividadeComplementarVO;
 import br.upe.acs.dominio.vo.MinhasHorasNaAtividadeVO;
 import br.upe.acs.repositorio.UsuarioRepositorio;
+import br.upe.acs.servico.interfaces.IAlunoServico;
 import br.upe.acs.utils.AcsExcecao;
 import org.springframework.stereotype.Service;
 
@@ -19,32 +20,15 @@ import static br.upe.acs.servico.RequisicaoServico.gerarPaginacaoRequisicoes;
 
 @Service
 @RequiredArgsConstructor
-public class AlunoServico {
+public class AlunoServico implements IAlunoServico {
 
 	private final UsuarioRepositorio repositorio;
 
 	private final AtividadeServico atividadeServico;
 
-	public Usuario buscarAlunoPorId(Long id) throws AcsExcecao {
-		Optional<Usuario> usuario = repositorio.findById(id);
-		if (usuario.isEmpty()) {
-			throw new AcsExcecao("Não existe um usuário associado a este id!");
-		}
-
-		return usuario.get();
-	}
-
-	public Usuario buscarAlunoPorEmail(String email) throws AcsExcecao {
-		Optional<Usuario> aluno = repositorio.findByEmail(email);
-		if (aluno.isEmpty()) {
-			throw new AcsExcecao("Não existe um usuário associado a este email!");
-		}
-
-		return aluno.get();
-	}
-
-	public Map<String, Object> listarRequisicoesPaginadas(String email, int pagina, int quantidade) throws AcsExcecao {
-		Usuario aluno = buscarAlunoPorEmail(email);
+	@Override
+	public Map<String, Object> listarRequisicoesPaginadas(String email, int pagina, int quantidade) {
+		Usuario aluno = repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
 		List<RequisicaoSimplesResposta> requisicoesAluno = new ArrayList<>(aluno.getRequisicoes().stream()
 				.filter(requisicao -> !requisicao.isArquivada())
 				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
@@ -52,16 +36,18 @@ public class AlunoServico {
 		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
 	}
 
-	public AtividadeComplementarVO atividadesComplementaresAluno(String email) throws AcsExcecao {
-		Usuario aluno = buscarAlunoPorEmail(email);
+	@Override
+	public AtividadeComplementarVO atividadesComplementaresAluno(String email) {
+
+		Usuario aluno = repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
 
 		return new AtividadeComplementarVO(aluno);
 	}
 
-    public MinhasHorasNaAtividadeVO minhasHorasDeNaAtividade(String email, Long atividadeId) throws AcsExcecao {
+	@Override
+    public MinhasHorasNaAtividadeVO minhasHorasNaAtividade(String email, Long atividadeId) {
 		Atividade atividade = atividadeServico.buscarAtividadePorId(atividadeId);
-
-		Usuario aluno = buscarAlunoPorEmail(email);
+		Usuario aluno = repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
 
 		return calcularMinhasHoras(aluno, atividade.getChMaxima());
 

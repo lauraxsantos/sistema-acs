@@ -2,6 +2,7 @@ package br.upe.acs.servico;
 
 import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
+import br.upe.acs.servico.interfaces.IRequisicaoPDF;
 import br.upe.acs.utils.AcsExcecao;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.ITemplateEngine;
@@ -18,7 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Service
-public class RequisicaoPDFCasoDeUso {
+public class RequisicaoPDFCasoDeUso implements IRequisicaoPDF {
 
     private final RequisicaoServico servico;
 
@@ -34,7 +35,7 @@ public class RequisicaoPDFCasoDeUso {
         this.templateEngine = templateEngine;
     }
 
-    public byte[] gerarRequisicaoPDF(Long id) throws AcsExcecao {
+    public byte[] gerarRequisicaoPDF(Long id) {
         Requisicao requisicao = servico.buscarRequisicaoPorId(id);
 
         if (requisicao.getStatusRequisicao() != RequisicaoStatusEnum.TRANSITO) {

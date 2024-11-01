@@ -25,106 +25,46 @@ public class CertificadoControlador {
 
     private final JwtService jwtService;
 
-    @Operation(
-            summary = "Buscar certificado por id",
-             description = "Esta rota permite busca informações mais detalhadas sobre um certificado de forma, " +
-                     "retornando informações de id, titulo, eixo, atividade, status, data de inicio, data de fim e carga" +
-                     " horária. Essa rota será util para aluno, coordenação e comissão tenha acesso aos certificados."
-
-    )
+    @Operation(summary = "Buscar certificado por id")
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscarCertificadoPorId(@PathVariable("id") Long id) {
-        ResponseEntity<?> resposta;
-        try {
-            CertificadoResposta certificadoResposta = new CertificadoResposta(servico.buscarCertificadoPorId(id));
-            resposta = ResponseEntity.ok(certificadoResposta);
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-        
-        return resposta;
+    public ResponseEntity<CertificadoResposta> buscarCertificadoPorId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(new CertificadoResposta(servico.buscarCertificadoPorId(id)));
     }
 
-    @Operation(
-            summary = "Buscar o arquivo do certificado por id",
-            description = "Esta rota permite busca e acessar o base64 do arquivo de um certificado no sistema. " +
-                    "Essa rota será util para aluno, coordenação e comissão tenha acesso ao arquivo dos certificados."
-    )
+    @Operation(summary = "Buscar o arquivo do certificado por id")
     @GetMapping("/{id}/pdf")
-    public ResponseEntity<?> buscarPdfDoCertificadoPorId(@PathVariable("id") Long certificadoId) {
-        ResponseEntity<?> resposta;
-        try {
-            ArquivoResposta arquivo = new ArquivoResposta(servico.buscarPdfDoCertificadoPorId(certificadoId));
-            resposta = ResponseEntity.ok(arquivo);
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+    public ResponseEntity<ArquivoResposta> buscarPdfDoCertificadoPorId(@PathVariable("id") Long certificadoId) {
+        return ResponseEntity.ok(new ArquivoResposta(servico.buscarPdfDoCertificadoPorId(certificadoId)));
     }
 
 
-    @Operation(
-            summary = "adicionar certificado",
-            description = "Esta rota cria um novo certificado no sistema com o envio de id de uma requisição rascunho e" +
-                    " o arquivo do certificado e retorna o id do certificado. Essa rota permitirá o aluno " +
-                    "adicionar certificados a requisição, antes da submissão, para análise da coordenação."
-    )
+    @Operation(summary = "Adicionar certificado")
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> adicionarCertificado(
             HttpServletRequest request,
             Long requisicaoId,
             @RequestPart(value = "certificado") MultipartFile certificado) {
-        ResponseEntity<?> resposta;
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-        try {
-            resposta = ResponseEntity.status(201).body(servico.adicionarCertificado(certificado, requisicaoId, email));
-        } catch (Exception e) {
-            resposta = ResponseEntity.status(404).body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+        return ResponseEntity.status(201).body(servico.adicionarCertificado(certificado, requisicaoId, email));
     }
 
-    @Operation(
-            summary = "alterar certificado",
-            description = "Esta rota permite o aluno alterar o certificado enquanto ainda é um rascunho é preenche os " +
-                    "os campos para poder submeter para análise. Util para o aluno modificar e salvar suas alterações " +
-                    "incompletas em certificado."
-    )
+    @Operation(summary = "Alterar certificado")
     @PutMapping("/{id}")
     public ResponseEntity<?> alterarCertificado(
             HttpServletRequest request,
             @PathVariable("id") Long id,
             @RequestBody CertificadoDTO certificadoDTO
             ) {
-        ResponseEntity<?> resposta;
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-        try {
-            servico.alterarCertificado(id, certificadoDTO, email);
-            resposta = ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+        servico.alterarCertificado(id, certificadoDTO, email);
+        return ResponseEntity.noContent().build();
     }
 
-    @Operation(
-            summary = "excluir certificados",
-            description = "Esta rota permite o aluno excluir certificados com status rascunho em casos de nescessidades."
-    )
+    @Operation(summary = "Excluir certificados")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> excluirCertificado(HttpServletRequest request, @PathVariable("id") Long certificadoId) {
-        ResponseEntity<?> resposta;
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-        try {
-            servico.excluirCertificado(certificadoId, email);
-            resposta = ResponseEntity.noContent().build();
-        } catch (AcsExcecao e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+        servico.excluirCertificado(certificadoId, email);
+        return ResponseEntity.noContent().build();
     }
 }

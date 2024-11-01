@@ -8,71 +8,41 @@ import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
 import br.upe.acs.repositorio.UsuarioRepositorio;
+import br.upe.acs.servico.interfaces.IUsuarioServico;
 import br.upe.acs.utils.AcsExcecao;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Comparator;
-import java.util.concurrent.CompletableFuture;
 
-import static br.upe.acs.servico.ControleAcessoServico.gerarCodigoVerificacao;
-import static br.upe.acs.servico.ControleAcessoServico.validarSenha;
 import static br.upe.acs.servico.RequisicaoServico.gerarPaginacaoRequisicoes;
 
 @Service
 @RequiredArgsConstructor
-public class UsuarioServico {
+public class UsuarioServico implements IUsuarioServico {
 	
     private final UsuarioRepositorio repositorio;
 
 	private final CursoServico cursoServico;
 
-	private final PasswordEncoder passwordEncoder;
+	@Override
+    public Usuario buscarUsuarioPorId(Long id){
+    	return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
 
-	private final AuthenticationManager authenticationManager;
-
-	private final EmailServico emailServico;
-
-    public Usuario buscarUsuarioPorId(Long id) throws AcsExcecao {
-		Optional<Usuario> usuario = repositorio.findById(id);
-		if (usuario.isEmpty()) {
-			throw new AcsExcecao("Não existe um usuário associado a este id!");
-		}
-
-		return usuario.get();
     }
     
-    public Usuario buscarUsuarioPorEmail(String email) throws AcsExcecao{
-    	Optional<Usuario> usuario = repositorio.findByEmail(email);
-    	if (usuario.isEmpty()) {
-			throw new AcsExcecao("Não existe um usuário associado a este id!");
-		}
-		return usuario.get();
-    	
+    @Override
+    public Usuario buscarUsuarioPorEmail(String email){
+    	return repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
     }
 
-    public String verificarUsuario(String email, String codigoVerificacao) throws AcsExcecao {
-        Usuario usuario = buscarUsuarioPorEmail(email);
 
-		if (usuario.isVerificado()) {
-			throw new AcsExcecao("Este usuário já é verificado!");
-		} else if (!codigoVerificacao.equals(usuario.getCodigoVerificacao())) {
-			throw new AcsExcecao("O código de verificação está incorreto!");
-		}
-		usuario.setVerificado(true);
-		repositorio.save(usuario);
-		return "Aluno verificado com sucesso!";
-    }
-
-    public Map<String, Object> listarRequisicoesPorAlunoPaginadas(Long alunoId, int pagina, int quantidade) throws AcsExcecao {
+    @Override
+    public Map<String, Object> listarRequisicoesPorAlunoPaginadas(Long alunoId, int pagina, int quantidade) {
 		Usuario usuario = buscarUsuarioPorId(alunoId);
 		List<RequisicaoSimplesResposta> requisicoesAluno = new ArrayList<>(usuario.getRequisicoes().stream()
 				.filter(requisicao -> requisicao.getStatusRequisicao() != RequisicaoStatusEnum.RASCUNHO)
@@ -81,7 +51,9 @@ public class UsuarioServico {
 
 		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
 	}
-    public Map<String, Object> listarRequisicoesPorAlunoPaginadasEixo(Long alunoId, EixoEnum eixo, int pagina, int quantidade) throws AcsExcecao {
+    
+    @Override
+    public Map<String, Object> listarRequisicoesPorAlunoPaginadasEixo(Long alunoId, EixoEnum eixo, int pagina, int quantidade) {
 		
     	Usuario usuario = buscarUsuarioPorId(alunoId);
 		List<Requisicao> requisicoes = usuario.getRequisicoes().stream()
@@ -106,46 +78,19 @@ public class UsuarioServico {
 		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
 	}
 
-	public String alterarCodigoVerificacao(String email) throws AcsExcecao {
+
+    @Override
+	public void alterarDados(String email, String nomeCompleto, String telefone, Long cursoId) {
 		Usuario usuario = buscarUsuarioPorEmail(email);
-
-		if (usuario.isVerificado()) {
-			throw new AcsExcecao("Usuário já é verificado!");
-		}
-
-		String novoCodigoVerificacao = gerarCodigoVerificacao();
-
-		usuario.setCodigoVerificacao(novoCodigoVerificacao);
-
-		repositorio.save(usuario);
-
-		CompletableFuture.runAsync(() -> emailServico.enviarEmailCodigoVerificacao(email, novoCodigoVerificacao));
-
-		return "O código de verificação reenviado.";
+		usuario.setNomeCompleto(nomeCompleto);
+		usuario.setTelefone(telefone);
+		Curso curso = cursoServico.buscarCursoPorId(cursoId);
+        usuario.setCurso(curso);
+        repositorio.save(usuario);
 	}
-
-	public void alterarSenha(String email, String senha, String novaSenha) throws AcsExcecao {
-		validarSenha(novaSenha);
-		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, senha));
-		if (repositorio.findByEmail(email).isPresent()) {
-			Usuario usuario = repositorio.findByEmail(email).orElseThrow();
-			usuario.setSenha(passwordEncoder.encode(novaSenha));
-			repositorio.save(usuario);
-		}
-	}
-
-	public void alterarDados(String email, String nomeCompleto, String telefone, Long cursoId) throws AcsExcecao {
-		if (repositorio.findByEmail(email).isPresent()) {
-			Usuario usuario = repositorio.findByEmail(email).orElseThrow();
-			usuario.setNomeCompleto(nomeCompleto);
-			usuario.setTelefone(telefone);
-			Curso curso = cursoServico.buscarCursoPorId(cursoId);
-            usuario.setCurso(curso);
-            repositorio.save(usuario);
-		}
-	}
-
-	public void desativarPerfilDoUsuario(String email) throws AcsExcecao {
+	
+	@Override
+	public void desativarPerfilDoUsuario(String email) {
 		Usuario usuario = buscarUsuarioPorEmail(email);
 
 		if (usuario.getRequisicoes().isEmpty()) {

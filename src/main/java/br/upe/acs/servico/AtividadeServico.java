@@ -4,6 +4,7 @@ import br.upe.acs.dominio.Atividade;
 import br.upe.acs.dominio.dto.AtividadeDTO;
 import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.repositorio.AtividadeRepositorio;
+import br.upe.acs.servico.interfaces.IAtividadeServico;
 import br.upe.acs.utils.AcsExcecao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,24 +14,22 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class AtividadeServico {
+public class AtividadeServico implements IAtividadeServico {
 
 	private final AtividadeRepositorio repositorio;
 
+	@Override
 	public List<Atividade> listarAtividades() {
 		return repositorio.findAll();
 	}
 
-	public Atividade buscarAtividadePorId(Long id) throws AcsExcecao {
-		Optional<Atividade> atividade = repositorio.findById(id);
-		if (atividade.isEmpty()) {
-			throw new AcsExcecao("Não existe uma atividade associada a este id!");
-		}
-
-		return atividade.get();
+	@Override
+	public Atividade buscarAtividadePorId(Long id) {
+		return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Atividade não encontrada"));
 	}
 
-	public List<Atividade> buscarAtividadePorEixo(String eixo) throws AcsExcecao{
+	@Override
+	public List<Atividade> buscarAtividadePorEixo(String eixo) {
 		boolean existe = false;
 		EixoEnum eixoFormato = null;
 		for(EixoEnum c : EixoEnum.values()) {
@@ -52,7 +51,8 @@ public class AtividadeServico {
 		return atividade;
 	}
 
-	public Atividade criarAtividade(AtividadeDTO atividade) throws AcsExcecao {
+	@Override
+	public Atividade criarAtividade(AtividadeDTO atividade) {
 		Atividade atividadeNova = new Atividade();
 		atividadeNova.setEixo(atividade.getEixo());
 		atividadeNova.setDescricao(atividade.getDescricao());
@@ -63,24 +63,23 @@ public class AtividadeServico {
 		return atividadeNova;
 	}
 
-	public void excluirAtividade(Long id) throws AcsExcecao {
-		Atividade atividade = buscarAtividadePorId(id);
+	@Override
+	public void excluirAtividade(Long id){
+		repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Atividade não encontrada"));
         repositorio.deleteById(id);
     }
 
-    public Atividade alterarAtividade(Long id, AtividadeDTO atividade) throws AcsExcecao {
-        Optional<Atividade> atividadeAtualizada = repositorio.findById(id);
+	@Override
+    public Atividade alterarAtividade(Long id, AtividadeDTO atividade){
+        Atividade atividadeAtualizada = repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Atividade não encontrada"));
 
-        if (atividadeAtualizada.isEmpty()) {
-            throw new AcsExcecao("Não foi encontrada nenhuma atividade com esse id");
-        }
 
-        atividadeAtualizada.get().setEixo(atividade.getEixo());
-        atividadeAtualizada.get().setDescricao(atividade.getDescricao());
-        atividadeAtualizada.get().setCriteriosParaAvaliacao(atividade.getCriteriosParaAvaliacao());
-		atividadeAtualizada.get().setChMaxima(atividade.getChMaxima());
-        atividadeAtualizada.get().setChPorCertificado(atividade.getChPorCertificado());
-        repositorio.save(atividadeAtualizada.get());
-        return atividadeAtualizada.get();
+        atividadeAtualizada.setEixo(atividade.getEixo());
+        atividadeAtualizada.setDescricao(atividade.getDescricao());
+        atividadeAtualizada.setCriteriosParaAvaliacao(atividade.getCriteriosParaAvaliacao());
+		atividadeAtualizada.setChMaxima(atividade.getChMaxima());
+        atividadeAtualizada.setChPorCertificado(atividade.getChPorCertificado());
+        repositorio.save(atividadeAtualizada);
+        return atividadeAtualizada;
     }
 }

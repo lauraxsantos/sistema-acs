@@ -1,10 +1,15 @@
 package br.upe.acs.servico;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 import br.upe.acs.dominio.*;
 import br.upe.acs.repositorio.UsuarioRepositorio;
+import br.upe.acs.servico.interfaces.IAutenticacaoServico;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,11 +22,12 @@ import br.upe.acs.dominio.dto.LoginDTO;
 import br.upe.acs.dominio.dto.RegistroDTO;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.utils.AcsExcecao;
+import br.upe.acs.utils.EmailUtils;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class ControleAcessoServico {
+public class AutenticacaoServico implements IAutenticacaoServico {
 
 	private final UsuarioRepositorio usuarioRepositorio;
 
@@ -31,13 +37,14 @@ public class ControleAcessoServico {
 
     private final CursoServico cursoServico;
 
-    private final EmailServico emailServico;
+    private final EmailUtils emailServico;
 
     private final PasswordEncoder passwordEncoder;
 
     private final AuthenticationManager authenticationManager;
 
-    public AutenticacaoResposta cadastrarUsuario(RegistroDTO registro) throws AcsExcecao {
+    @Override
+    public AutenticacaoResposta cadastrarUsuario(RegistroDTO registro) {
         verificarDadosUnicos(registro.getEmail(), registro.getCpf());
 		validarSenha(registro.getSenha());
 		validarEmailInstitucional(registro.getEmail());
@@ -70,20 +77,95 @@ public class ControleAcessoServico {
         return gerarAutenticacaoResposta(usuarioSalvar);
     }
 
-    public AutenticacaoResposta loginUsuario(LoginDTO login) throws AcsExcecao {
+    @Override
+    public AutenticacaoResposta loginUsuario(LoginDTO login){
+    	Usuario usuario = usuarioRepositorio.findByEmail(login.getEmail()).orElseThrow(() -> new AcsExcecao("Email não cadastrado") );
+    	
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(), login.getSenha()));
-
-		Usuario usuario;
-		if (usuarioRepositorio.findByEmail(login.getEmail()).isPresent()) {
-			usuario = usuarioRepositorio.findByEmail(login.getEmail()).orElseThrow();
-		} else {
-			throw new AcsExcecao("Usuário não encontrado!");
-		}
 
 		return gerarAutenticacaoResposta(usuario);
     }
+    
+    @Override
+    public String verificarUsuario(String email, String codigoVerificacao) {
+        Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
 
-	private void verificarDadosUnicos(String email, String cpf) throws AcsExcecao {
+		if (usuario.isVerificado()) {
+			throw new AcsExcecao("Este usuário já é verificado!");
+		} else if (!codigoVerificacao.equals(usuario.getCodigoVerificacao())) {
+			throw new AcsExcecao("O código de verificação está incorreto!");
+		}
+		usuario.setVerificado(true);
+		usuarioRepositorio.save(usuario);
+		return "Aluno verificado com sucesso!";
+    }
+    
+    @Override
+	public String alterarCodigoVerificacao(String email) {
+		Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
+
+		if (usuario.isVerificado()) {
+			throw new AcsExcecao("Usuário já é verificado!");
+		}
+
+		String novoCodigoVerificacao = gerarCodigoVerificacao();
+
+		usuario.setCodigoVerificacao(novoCodigoVerificacao);
+
+		usuarioRepositorio.save(usuario);
+
+		CompletableFuture.runAsync(() -> emailServico.enviarEmailCodigoVerificacao(email, novoCodigoVerificacao));
+
+		return "Código de verificação reenviado.";
+	}
+    
+    @Override
+	public void alterarSenha(String email, String senha, String novaSenha) {
+		validarSenha(novaSenha);
+		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, senha));
+		Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
+		usuario.setSenha(passwordEncoder.encode(novaSenha));
+		usuarioRepositorio.save(usuario);
+	}
+	
+    @Override
+    public void esquecerSenha(String email) {
+        Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("USuario não encontrado"));
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("recuperacao", true);
+        String token = jwtService.generateToken(claims, usuario, 1000 * 60 * 15);
+        CompletableFuture.runAsync(() -> emailServico.enviarEmailDeRecuperacaoDeSenha(usuario, token));
+
+    }
+    
+    @Override
+    public void recuperarSenha(String token, String novaSenha) {
+        boolean isTokenDeRecuperacao;
+
+        try {
+            isTokenDeRecuperacao = jwtService.extractClaim(token,
+                    (claims -> claims.get("recuperacao", Boolean.class)));
+        } catch (Exception e) {
+            throw new AcsExcecao("Token inválido!");
+        }
+
+        if (!isTokenDeRecuperacao) {
+            throw new AcsExcecao("Token inválido!");
+        }
+
+        String email = jwtService.extractUsername(token);
+
+        Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("USuario não encontrado"));
+
+         validarSenha(novaSenha);
+
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+
+        usuarioRepositorio.save(usuario);
+    }
+
+	private void verificarDadosUnicos(String email, String cpf) {
 		String mensagem = "";
 		
 		String cpfFormatado = cpf.replaceAll("[^0-9]", "");
@@ -101,7 +183,7 @@ public class ControleAcessoServico {
 		}
 	}
 
-	protected static void validarSenha(String senha) throws AcsExcecao {
+	protected static void validarSenha(String senha) {
 		boolean comMaiuscula = false, comMinuscula = false, comNumerico = false, comEspecial = false;
 
 		if (senha.length() < 8) {
@@ -140,13 +222,13 @@ public class ControleAcessoServico {
 		}
 	}
 
-	private void validarEmailInstitucional(String email) throws AcsExcecao {
+	private void validarEmailInstitucional(String email) {
 		if (!email.split("@")[1].equals("upe.br")) {
 			throw new AcsExcecao("Email inválido! Por favor insira o email institucional válido.");
 		}
 	}
 	
-	private void validarMatricula(String matricula) throws AcsExcecao{
+	private void validarMatricula(String matricula) {
 		
 		if(!matricula.matches("[0-9]+")) {
 			throw new AcsExcecao("Por favor, insira uma matrícula válida");
@@ -162,7 +244,7 @@ public class ControleAcessoServico {
 			
 	}
 	
-	private void validarPeriodo(int periodo) throws AcsExcecao{
+	private void validarPeriodo(int periodo){
 		if(periodo < 1 || periodo > 12) {
 			throw new AcsExcecao("Por favor, insira um período válido");
 		}

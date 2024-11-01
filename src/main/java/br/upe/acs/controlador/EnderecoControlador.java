@@ -15,20 +15,9 @@ import org.springframework.web.bind.annotation.*;
 public class EnderecoControlador {
 
     private final EnderecoServico servico;
-    @Operation(summary = "Buscar endereço por CEP", 
-    		description = "Esse endpoint deve ser capaz de buscar o endereço de acordo com CEP na API ViaCep.\n"
-    				+ "\nPré-condição: Nenhuma\n"
-    				+ "\nPós-condição: Nenhuma")
+    @Operation(summary = "Buscar endereço por CEP")
     @GetMapping("/{cep}")
     public ResponseEntity<?> buscarEnderecoPorCep(@PathVariable String cep) {
-        ResponseEntity<?> resposta;
-        try {
-            ViaCepResposta viaCepResposta = new ViaCepResposta(servico.buscarEnderecoPorCep(cep));
-            resposta = ResponseEntity.ok(viaCepResposta);
-        } catch (Exception e) {
-            resposta = ResponseEntity.badRequest().body(new MensagemUtil(e.getMessage()));
-        }
-
-        return resposta;
+    	return ResponseEntity.ok(new ViaCepResposta(servico.buscarEnderecoPorCep(cep)));
     }
 }

@@ -1,4 +1,4 @@
-package br.upe.acs.servico;
+package br.upe.acs.utils;
 
 import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.dominio.Usuario;
@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class EmailServico {
+public class EmailUtils {
 	
 	private final JavaMailSender emailRemetente;
 	
