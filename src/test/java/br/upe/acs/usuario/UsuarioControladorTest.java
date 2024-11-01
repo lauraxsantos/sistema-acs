@@ -1,9 +1,15 @@
 package br.upe.acs.usuario;
 
+import br.upe.acs.config.JwtService;
+import br.upe.acs.controlador.CursoControlador;
 import br.upe.acs.controlador.UsuarioControlador;
 import br.upe.acs.controlador.respostas.UsuarioResposta;
+import br.upe.acs.dominio.Curso;
+import br.upe.acs.dominio.Endereco;
 import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.dto.AlterarSenhaDTO;
+import br.upe.acs.dominio.enums.PerfilEnum;
+import br.upe.acs.repositorio.UsuarioRepositorio;
 import br.upe.acs.servico.ControleAcessoServico;
 import br.upe.acs.servico.UsuarioServico;
 import br.upe.acs.utils.AcsExcecao;
@@ -14,162 +20,117 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class UsuarioControladorTest {
-    @Mock
+@WebMvcTest(UsuarioControlador.class)
+public class UsuarioControladorTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
     private UsuarioServico servico;
-    @Mock
-    private HttpServletRequest request;
-    @InjectMocks
-    private UsuarioControlador controlador;
 
-    @Mock
-    private ControleAcessoServico controleAcessoServico;
-
-    @Mock
-    private UsuarioServico usuarioServico;
+    @MockBean
+    private UsuarioRepositorio usuarioRepositorio;
 
     @BeforeEach
-    void setUp() {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
+        when(jwtService.isTokenValid(anyString(), any(UserDetails.class))).thenReturn(true);
     }
+
     @Test
-    void retornarPerfilDoUsuario_UsuarioVerificado_RetornaUsuarioResposta() throws AcsExcecao {
-// Arrange
+    @WithMockUser
+    public void listarUsuario_DeveRetornarUsuarioPeloId() throws Exception {
         Long usuarioId = 1L;
-        String token = "valid_token";
-        Usuario aluno = new Usuario();
-        UsuarioResposta usuarioResposta = new UsuarioResposta(aluno);
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(servico.buscarUsuarioPorId(usuarioId)).thenAnswer(invocation -> {
-            if (invocation.getArgument(0).equals(usuarioId)) {
-                return Optional.of(usuarioResposta);
-            }
-            return Optional.empty();
-        });
-// Act
-        ResponseEntity<?> resposta = controlador.retornarPerfilDoUsuario(request);
-// Assert
-        assertEquals(HttpStatus.OK, resposta.getStatusCode());
-        assertEquals(usuarioResposta, resposta.getBody());
-        verify(servico, times(1)).buscarUsuarioPorId(usuarioId);
-    }
-    @Test
-    void retornarPerfilDoUsuario_UsuarioNaoVerificado_RetornaForbidden() throws AcsExcecao {
-// Arrange
-        Long usuarioId = 1L;
-        String token = "valid_token";
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(servico.buscarUsuarioPorId(usuarioId)).thenAnswer(invocation -> {
-            if (invocation.getArgument(0).equals(usuarioId)) {
-                return Optional.empty();
-            }
-            return Optional.empty();
-        });
-// Act
-        ResponseEntity<?> resposta = controlador.retornarPerfilDoUsuario(request);
-// Assert
-        assertEquals(HttpStatus.FORBIDDEN, resposta.getStatusCode());
-        assertEquals("Usuário não verificado.", resposta.getBody().toString());
-        verify(servico, times(1)).buscarUsuarioPorId(usuarioId);
-    }
-    @Test
-    void retornarPerfilDoUsuario_AcsExcecao_RetornaBadRequest() throws AcsExcecao {
-// Arrange
-        Long usuarioId = 1L;
-        String token = "valid_token";
-        String mensagemErro = "Erro ao buscar usuário.";
-        AcsExcecao excecao = new AcsExcecao(mensagemErro);
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(servico.buscarUsuarioPorId(usuarioId)).thenAnswer(invocation -> {
-            if (invocation.getArgument(0).equals(usuarioId)) {
-                throw excecao;
-            }
-            return Optional.empty();
-        });
-// Act
-        ResponseEntity<?> resposta = controlador.retornarPerfilDoUsuario(request);
-// Assert
-        assertEquals(HttpStatus.BAD_REQUEST, resposta.getStatusCode());
-        assertEquals(mensagemErro, resposta.getBody().toString());
-        verify(servico, times(1)).buscarUsuarioPorId(usuarioId);
-    }
-    @Test
-    void verificarUsuario_Sucesso_RetornaUsuarioVerificado() throws AcsExcecao {
-// Arrange
-        String email = "teste@gmail.com";
-        String codigoDeVerificacao = "123456";
-        when(servico.verificarUsuario(email, codigoDeVerificacao)).thenReturn("Usuário verificado com sucesso.");
-// Act
-        ResponseEntity<?> resposta = controlador.verificarUsuario(request, codigoDeVerificacao);
-// Assert
-        assertEquals(HttpStatus.OK, resposta.getStatusCode());
-        assertEquals("Usuário verificado com sucesso.", resposta.getBody().toString());
-        verify(servico, times(1)).verificarUsuario(email, codigoDeVerificacao);
-    }
-    @Test
-    void verificarUsuario_AcsExcecao_RetornaBadRequest() throws AcsExcecao {
-// Arrange
-        String email = "teste@gmail.com";
-        String codigoDeVerificacao = "123456";
-        String mensagemErro = "Erro ao verificar usuário.";
-        AcsExcecao excecao = new AcsExcecao(mensagemErro);
-        when(servico.verificarUsuario(email, codigoDeVerificacao)).thenThrow(excecao);
-// Act
-        ResponseEntity<?> resposta = controlador.verificarUsuario(request, codigoDeVerificacao);
-// Assert
-        assertEquals(HttpStatus.BAD_REQUEST, resposta.getStatusCode());
-        assertEquals(mensagemErro, resposta.getBody().toString());
-        verify(servico, times(1)).verificarUsuario(email, codigoDeVerificacao);
-    }
+        Usuario usuario = new Usuario();
 
-    //Antigo UsuárioControlladorTest
-    @Test
-    public void testAlterarSenhaComSucesso() {
-        String token = "Token";
-        AlterarSenhaDTO alterarSenhaDTO = new AlterarSenhaDTO();
-        alterarSenhaDTO.setSenha("Senha123@");
-        alterarSenhaDTO.setNovaSenha("NovaSenha123@");
+        usuario.setId(usuarioId);
+        usuario.setNomeCompleto("João da Silva");
+        usuario.setMatricula("2023123456");
+        usuario.setPeriodo(5);
+        usuario.setTelefone("(81) 98765-4321");
+        usuario.setEmail("joao.silva@example.com");
+        usuario.setVerificado(true);
+        usuario.setPerfil(PerfilEnum.ALUNO);
+        usuario.setCurso(new Curso());
 
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(servico.buscarUsuarioPorId(usuarioId)).thenReturn(usuario);
 
-        try {
-            Mockito.doNothing().when(usuarioServico).alterarSenha(token, alterarSenhaDTO.getSenha(), alterarSenhaDTO.getNovaSenha());
-        } catch (AcsExcecao e) {
-            e.printStackTrace();
-        }
-
-        ResponseEntity<?> resposta = controlador.alterarSenha(request, alterarSenhaDTO);
-
-        assertEquals(HttpStatus.NO_CONTENT, resposta.getStatusCode());
+        mockMvc.perform(get("/api/usuario/{id}", usuarioId)
+                        .header("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(usuarioId))
+                .andExpect(jsonPath("$.nomeCompleto").value("João da Silva"))
+                .andExpect(jsonPath("$.matricula").value("2023123456"))
+                .andExpect(jsonPath("$.periodo").value(5))
+                .andExpect(jsonPath("$.telefone").value("(81) 98765-4321"))
+                .andExpect(jsonPath("$.email").value("joao.silva@example.com"))
+                .andExpect(jsonPath("$.verificado").value(true))
+                .andExpect(jsonPath("$.perfis").value("ALUNO"))
+                .andExpect(jsonPath("$.curso").exists()); ;
     }
 
     @Test
-    public void testAlterarSenha_Falha() throws AcsExcecao {
-        String token = "Token";
-        AlterarSenhaDTO alterarSenhaDTO = new AlterarSenhaDTO();
-        alterarSenhaDTO.setSenha("SenhaAtual123@");
-        alterarSenhaDTO.setNovaSenha("NovaSenha123@");
+    @WithMockUser
+    public void listarUsuario_DeveRetornarPerfilDoUsuario() throws Exception {
 
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        String usuarioEmail = "joao.silva@example.com";
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
+        Usuario usuario = new Usuario();
 
-        String mensagemErro = "Erro ao alterar a senha";
-        Mockito.doThrow(new AcsExcecao(mensagemErro)).when(usuarioServico).alterarSenha(token, alterarSenhaDTO.getSenha(),
-                alterarSenhaDTO.getNovaSenha());
+        usuario.setId(1L);
+        usuario.setNomeCompleto("João da Silva");
+        usuario.setMatricula("2023123456");
+        usuario.setPeriodo(5);
+        usuario.setTelefone("(81) 98765-4321");
+        usuario.setEmail(usuarioEmail);
+        usuario.setVerificado(true);
+        usuario.setPerfil(PerfilEnum.ALUNO);
+        usuario.setCurso(new Curso());
 
-        ResponseEntity<?> resposta = controlador.alterarSenha(request, alterarSenhaDTO);
+        when(jwtService.extractUsername(anyString())).thenReturn(usuarioEmail);
 
-        assertEquals(HttpStatus.BAD_REQUEST, resposta.getStatusCode());
-        assertEquals(mensagemErro, resposta.getBody());
+        when(servico.buscarUsuarioPorEmail(usuarioEmail)).thenReturn(usuario);
 
+        mockMvc.perform(get("/api/usuario/me")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.nomeCompleto").value("João da Silva"))
+                .andExpect(jsonPath("$.matricula").value("2023123456"))
+                .andExpect(jsonPath("$.periodo").value(5))
+                .andExpect(jsonPath("$.telefone").value("(81) 98765-4321"))
+                .andExpect(jsonPath("$.email").value(usuarioEmail))
+                .andExpect(jsonPath("$.verificado").value(true))
+                .andExpect(jsonPath("$.perfis").value("ALUNO"))
+                .andExpect(jsonPath("$.curso").exists());
     }
 }
 

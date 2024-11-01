@@ -5,6 +5,8 @@ import static org.mockito.Mockito.*;
 
 import br.upe.acs.config.JwtService;
 import br.upe.acs.controlador.CertificadoControlador;
+import br.upe.acs.dominio.Certificado;
+import br.upe.acs.dominio.enums.CertificadoStatusEnum;
 import br.upe.acs.servico.CertificadoServico;
 import br.upe.acs.utils.AcsExcecao;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -31,6 +34,19 @@ public class CertificadoControladorTest {
 
     @InjectMocks
     private CertificadoControlador controlador;
+
+    public static Certificado createMockCertificado() {
+        Certificado certificado = new Certificado();
+        certificado.setId(1L);
+        certificado.setTitulo("Certificado Teste");
+        certificado.setObservacao("Observação do certificado");
+        certificado.setDataInicial(new Date());
+        certificado.setDataFinal(new Date());
+        certificado.setCargaHoraria(40.0f);
+        certificado.setCertificado(new byte[]{1, 2, 3});
+        certificado.setStatusCertificado(CertificadoStatusEnum.RASCUNHO);
+        return certificado;
+    }
 
     @Test
     public void testAdicionarCertificado_RequisicaoNaoPertenceAoUsuario_ReturnBadRequest() throws IOException, AcsExcecao {

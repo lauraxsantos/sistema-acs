@@ -23,33 +23,33 @@ import br.upe.acs.dominio.dto.RegistroDTO;
 
 @ExtendWith(MockitoExtension.class)
 public class ControleAcessoTest {
-	
+
 	@InjectMocks
 	private ControleAcessoControlador controller;
-	
+
 	@Mock
 	private ControleAcessoServico servico;
-	
+
 	private RegistroDTO registro;
-	
+
 	@Mock
 	private BindingResult result;
-	
+
 	@BeforeEach
 	void setup() {
-		MockitoAnnotations.initMocks(this); // Inicializar as anotações Mockito
-		registro = new RegistroDTO("Emilio", "69851309095", "698513", 2, "87991234693", 
-				"teste@hotmail.com", "12345678", "56280000", "Rua X", "Bairro X", "Cidade X", "Pe", 10, (long) 134);
-	}
-	
+		MockitoAnnotations.initMocks(this);
+        registro = new RegistroDTO("Emilio", "69851309095", "698513", 2, "87991234693",
+                "teste@hotmail.com", "12345678", "56280000", "Rua X", "Bairro X", "Cidade X",
+                "Pe", null, 10, 134L);
+
+    }
+
 	@Test
 	void deveSalvarUsuarioComSucesso() {
         ResponseEntity<?> response = assertDoesNotThrow(() -> controller.cadastrarUsuario(registro, result));
         assertEquals(ResponseEntity.ok().build(), response);
-
- 	
 	}
-	
+
 	@Test
 	void nãoDeveSalvarUsuario() {
 		registro.setNomeCompleto("E"); // dado inválido
@@ -60,7 +60,5 @@ public class ControleAcessoTest {
         assertNotEquals(ResponseEntity.status(200).build(), response);
 
 	}
-
-
 
 }
