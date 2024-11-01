@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 
 import br.upe.acs.dominio.*;
 import br.upe.acs.repositorio.UsuarioRepositorio;
+import br.upe.acs.servico.interfaces.IAutenticacaoServico;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,11 +22,12 @@ import br.upe.acs.dominio.dto.LoginDTO;
 import br.upe.acs.dominio.dto.RegistroDTO;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.utils.AcsExcecao;
+import br.upe.acs.utils.EmailUtils;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class AutenticacaoServico {
+public class AutenticacaoServico implements IAutenticacaoServico {
 
 	private final UsuarioRepositorio usuarioRepositorio;
 
@@ -34,13 +37,14 @@ public class AutenticacaoServico {
 
     private final CursoServico cursoServico;
 
-    private final EmailServico emailServico;
+    private final EmailUtils emailServico;
 
     private final PasswordEncoder passwordEncoder;
 
     private final AuthenticationManager authenticationManager;
 
-    public AutenticacaoResposta cadastrarUsuario(RegistroDTO registro) throws AcsExcecao {
+    @Override
+    public AutenticacaoResposta cadastrarUsuario(RegistroDTO registro) {
         verificarDadosUnicos(registro.getEmail(), registro.getCpf());
 		validarSenha(registro.getSenha());
 		validarEmailInstitucional(registro.getEmail());
@@ -73,6 +77,7 @@ public class AutenticacaoServico {
         return gerarAutenticacaoResposta(usuarioSalvar);
     }
 
+    @Override
     public AutenticacaoResposta loginUsuario(LoginDTO login){
     	Usuario usuario = usuarioRepositorio.findByEmail(login.getEmail()).orElseThrow(() -> new AcsExcecao("Email não cadastrado") );
     	
@@ -81,6 +86,7 @@ public class AutenticacaoServico {
 		return gerarAutenticacaoResposta(usuario);
     }
     
+    @Override
     public String verificarUsuario(String email, String codigoVerificacao) {
         Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
 
@@ -94,6 +100,7 @@ public class AutenticacaoServico {
 		return "Aluno verificado com sucesso!";
     }
     
+    @Override
 	public String alterarCodigoVerificacao(String email) {
 		Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
 
@@ -112,6 +119,7 @@ public class AutenticacaoServico {
 		return "Código de verificação reenviado.";
 	}
     
+    @Override
 	public void alterarSenha(String email, String senha, String novaSenha) {
 		validarSenha(novaSenha);
 		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, senha));
@@ -120,6 +128,7 @@ public class AutenticacaoServico {
 		usuarioRepositorio.save(usuario);
 	}
 	
+    @Override
     public void esquecerSenha(String email) {
         Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("USuario não encontrado"));
 
@@ -130,6 +139,7 @@ public class AutenticacaoServico {
 
     }
     
+    @Override
     public void recuperarSenha(String token, String novaSenha) {
         boolean isTokenDeRecuperacao;
 

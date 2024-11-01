@@ -8,6 +8,7 @@ import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
 import br.upe.acs.repositorio.UsuarioRepositorio;
+import br.upe.acs.servico.interfaces.IUsuarioServico;
 import br.upe.acs.utils.AcsExcecao;
 import lombok.RequiredArgsConstructor;
 
@@ -22,22 +23,25 @@ import static br.upe.acs.servico.RequisicaoServico.gerarPaginacaoRequisicoes;
 
 @Service
 @RequiredArgsConstructor
-public class UsuarioServico {
+public class UsuarioServico implements IUsuarioServico {
 	
     private final UsuarioRepositorio repositorio;
 
 	private final CursoServico cursoServico;
 
-    public Usuario buscarUsuarioPorId(Long id) throws AcsExcecao {
+	@Override
+    public Usuario buscarUsuarioPorId(Long id){
     	return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
 
     }
     
-    public Usuario buscarUsuarioPorEmail(String email) throws AcsExcecao{
+    @Override
+    public Usuario buscarUsuarioPorEmail(String email){
     	return repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Usuario não encontrado"));
     }
 
 
+    @Override
     public Map<String, Object> listarRequisicoesPorAlunoPaginadas(Long alunoId, int pagina, int quantidade) {
 		Usuario usuario = buscarUsuarioPorId(alunoId);
 		List<RequisicaoSimplesResposta> requisicoesAluno = new ArrayList<>(usuario.getRequisicoes().stream()
@@ -47,6 +51,8 @@ public class UsuarioServico {
 
 		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
 	}
+    
+    @Override
     public Map<String, Object> listarRequisicoesPorAlunoPaginadasEixo(Long alunoId, EixoEnum eixo, int pagina, int quantidade) {
 		
     	Usuario usuario = buscarUsuarioPorId(alunoId);
@@ -73,6 +79,7 @@ public class UsuarioServico {
 	}
 
 
+    @Override
 	public void alterarDados(String email, String nomeCompleto, String telefone, Long cursoId) {
 		Usuario usuario = buscarUsuarioPorEmail(email);
 		usuario.setNomeCompleto(nomeCompleto);
@@ -81,8 +88,9 @@ public class UsuarioServico {
         usuario.setCurso(curso);
         repositorio.save(usuario);
 	}
-
-	public void desativarPerfilDoUsuario(String email) throws AcsExcecao {
+	
+	@Override
+	public void desativarPerfilDoUsuario(String email) {
 		Usuario usuario = buscarUsuarioPorEmail(email);
 
 		if (usuario.getRequisicoes().isEmpty()) {

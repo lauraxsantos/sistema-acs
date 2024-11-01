@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import br.upe.acs.dominio.Certificado;
 import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.repositorio.CertificadoRepositorio;
+import br.upe.acs.servico.interfaces.ICertificadoServico;
 import br.upe.acs.utils.AcsExcecao;
 import br.upe.acs.utils.ConverterArquivoExcecao;
 import br.upe.acs.utils.FormatoInvalidoExcecao;
@@ -25,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class CertificadoServico {
+public class CertificadoServico implements ICertificadoServico {
 
 	private final CertificadoRepositorio repositorio;
 
@@ -106,7 +107,7 @@ public class CertificadoServico {
 		repositorio.save(certificado);
 	}
 
-	public void excluirCertificado(Long certificadoId, String email) throws AcsExcecao {
+	public void excluirCertificado(Long certificadoId, String email) {
 		Certificado certificado = buscarCertificadoPorId(certificadoId);
 		if (!certificado.getRequisicao().getUsuario().getEmail().equals(email)) {
 			throw new AcsExcecao("Certificado não encontrado");

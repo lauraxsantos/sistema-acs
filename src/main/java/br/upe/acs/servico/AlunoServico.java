@@ -8,6 +8,7 @@ import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.vo.AtividadeComplementarVO;
 import br.upe.acs.dominio.vo.MinhasHorasNaAtividadeVO;
 import br.upe.acs.repositorio.UsuarioRepositorio;
+import br.upe.acs.servico.interfaces.IAlunoServico;
 import br.upe.acs.utils.AcsExcecao;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +20,13 @@ import static br.upe.acs.servico.RequisicaoServico.gerarPaginacaoRequisicoes;
 
 @Service
 @RequiredArgsConstructor
-public class AlunoServico {
+public class AlunoServico implements IAlunoServico {
 
 	private final UsuarioRepositorio repositorio;
 
 	private final AtividadeServico atividadeServico;
 
+	@Override
 	public Map<String, Object> listarRequisicoesPaginadas(String email, int pagina, int quantidade) {
 		Usuario aluno = repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
 		List<RequisicaoSimplesResposta> requisicoesAluno = new ArrayList<>(aluno.getRequisicoes().stream()
@@ -34,6 +36,7 @@ public class AlunoServico {
 		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
 	}
 
+	@Override
 	public AtividadeComplementarVO atividadesComplementaresAluno(String email) {
 
 		Usuario aluno = repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));
@@ -41,6 +44,7 @@ public class AlunoServico {
 		return new AtividadeComplementarVO(aluno);
 	}
 
+	@Override
     public MinhasHorasNaAtividadeVO minhasHorasNaAtividade(String email, Long atividadeId) {
 		Atividade atividade = atividadeServico.buscarAtividadePorId(atividadeId);
 		Usuario aluno = repositorio.findByEmail(email).orElseThrow(() -> new AcsExcecao("Email não cadastrado"));

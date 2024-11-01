@@ -7,15 +7,17 @@ import org.springframework.stereotype.Service;
 import br.upe.acs.dominio.Endereco;
 import br.upe.acs.dominio.dto.EnderecoDTO;
 import br.upe.acs.repositorio.EnderecoRepositorio;
+import br.upe.acs.servico.interfaces.IEnderecoServico;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
-public class EnderecoServico {
+public class EnderecoServico implements IEnderecoServico {
 
 	private final EnderecoRepositorio repositorio;
 
+	@Override
 	public Endereco adicionarEndereco(EnderecoDTO enderecoDTO) {
 		Endereco enderecoSalvar = new Endereco();		
 		enderecoSalvar.setCep(enderecoDTO.getCep());
@@ -28,6 +30,7 @@ public class EnderecoServico {
 		return repositorio.save(enderecoSalvar);
 	}
 
+	@Override
 	public ViaCepDTO buscarEnderecoPorCep(String cep) {
 		ViaCepDTO viaCepDTO;
 

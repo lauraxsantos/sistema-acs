@@ -8,7 +8,9 @@ import br.upe.acs.dominio.enums.CertificadoStatusEnum;
 import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
 import br.upe.acs.repositorio.CertificadoRepositorio;
 import br.upe.acs.repositorio.RequisicaoRepositorio;
+import br.upe.acs.servico.interfaces.IRequisicaoServico;
 import br.upe.acs.utils.AcsExcecao;
+import br.upe.acs.utils.EmailUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,16 +20,17 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
-public class RequisicaoServico {
+public class RequisicaoServico implements IRequisicaoServico {
 
 	private final RequisicaoRepositorio repositorio;
 
 	private final UsuarioServico usuarioServico;
 	
-	private final EmailServico emailServico;
+	private final EmailUtils emailServico;
 	
 	private final CertificadoRepositorio certificadoRepositorio;
 	
+	@Override
     public Long adicionarRequisicao(String email) {
         Usuario aluno = usuarioServico.buscarUsuarioPorEmail(email);
         List<Requisicao> requisicoesRacunhos = aluno.getRequisicoes().stream()
@@ -52,6 +55,7 @@ public class RequisicaoServico {
         return requisicaoSalva.getId();
     }
 
+	@Override
     public String submeterRequisicao(Long requisicaoId) {
         Requisicao requisicao = buscarRequisicaoPorId(requisicaoId);
 
@@ -83,6 +87,7 @@ public class RequisicaoServico {
         return token;
     }
 
+	@Override
     public void excluirRequisicao(Long requisicaoId, String email) {
         Requisicao requisicao = buscarRequisicaoPorId(requisicaoId);
         if (!requisicao.getUsuario().getEmail().equals(email)) {
@@ -139,15 +144,18 @@ public class RequisicaoServico {
         }
     }
 
+    @Override
 	public List<Requisicao> listarRequisicoes() {
 		return repositorio.findAll();
 	}
 
+    @Override
 	public List<Requisicao> listarRequisicoesPorAluno(Long alunoId) {
 		Usuario aluno = usuarioServico.buscarUsuarioPorId(alunoId);
 		return aluno.getRequisicoes();
 	}
 
+    @Override
 	public Map<String, Object> listarRequisicoesPaginadas(int pagina, int quantidade) {
 
 		List<RequisicaoSimplesResposta> requisicoes = repositorio.findAll().stream()
@@ -158,10 +166,12 @@ public class RequisicaoServico {
 		return gerarPaginacaoRequisicoes(requisicoes, pagina, quantidade);
 	}
 
+    @Override
 	public Requisicao buscarRequisicaoPorId(Long id){		
 		return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Requisição não encontrada"));
 	}
-	
+    
+	@Override
 	public String arquivarRequisicao(Long id, String email){
 		Requisicao requisicao = repositorio.findById(id).orElseThrow();
 		String resposta;
@@ -193,6 +203,7 @@ public class RequisicaoServico {
 		
 	}
 	
+	@Override
 	public String desarquivarRequisicao(Long id, String email){
 		Requisicao requisicao = repositorio.findById(id).orElseThrow();
 		Usuario usuario = usuarioServico.buscarUsuarioPorEmail(email);
@@ -212,6 +223,7 @@ public class RequisicaoServico {
 		return resposta;
 	}
 	
+	@Override
 	public List<Requisicao> listarRequisicoesArquivadas(String email){
 		Usuario aluno = usuarioServico.buscarUsuarioPorEmail(email);
 

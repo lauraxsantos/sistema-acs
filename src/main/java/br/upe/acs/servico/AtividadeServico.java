@@ -4,6 +4,7 @@ import br.upe.acs.dominio.Atividade;
 import br.upe.acs.dominio.dto.AtividadeDTO;
 import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.repositorio.AtividadeRepositorio;
+import br.upe.acs.servico.interfaces.IAtividadeServico;
 import br.upe.acs.utils.AcsExcecao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,19 +14,22 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class AtividadeServico {
+public class AtividadeServico implements IAtividadeServico {
 
 	private final AtividadeRepositorio repositorio;
 
+	@Override
 	public List<Atividade> listarAtividades() {
 		return repositorio.findAll();
 	}
 
-	public Atividade buscarAtividadePorId(Long id){
+	@Override
+	public Atividade buscarAtividadePorId(Long id) {
 		return repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Atividade não encontrada"));
 	}
 
-	public List<Atividade> buscarAtividadePorEixo(String eixo){
+	@Override
+	public List<Atividade> buscarAtividadePorEixo(String eixo) {
 		boolean existe = false;
 		EixoEnum eixoFormato = null;
 		for(EixoEnum c : EixoEnum.values()) {
@@ -47,6 +51,7 @@ public class AtividadeServico {
 		return atividade;
 	}
 
+	@Override
 	public Atividade criarAtividade(AtividadeDTO atividade) {
 		Atividade atividadeNova = new Atividade();
 		atividadeNova.setEixo(atividade.getEixo());
@@ -58,11 +63,13 @@ public class AtividadeServico {
 		return atividadeNova;
 	}
 
+	@Override
 	public void excluirAtividade(Long id){
 		repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Atividade não encontrada"));
         repositorio.deleteById(id);
     }
 
+	@Override
     public Atividade alterarAtividade(Long id, AtividadeDTO atividade){
         Atividade atividadeAtualizada = repositorio.findById(id).orElseThrow(() -> new AcsExcecao("Atividade não encontrada"));
 
