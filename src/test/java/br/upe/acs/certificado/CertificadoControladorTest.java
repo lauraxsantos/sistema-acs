@@ -59,8 +59,6 @@ public class CertificadoControladorTest {
         String token = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhh"
         		+ "bXBsZS5jb20ifQ.L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
   
-        
-
         // Definindo o comportamento do mock do jwtService para extrair o email do token
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token); // Adicionando o prefixo "Bearer"
         when(jwtService.extractUsername(eq(token))).thenReturn("email_do_usuario_logado"); // Usando o token sem o prefixo "Bearer"

@@ -10,6 +10,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import br.upe.acs.controlador.respostas.RequisicaoResposta;
+import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.servico.RequisicaoServico;
 import br.upe.acs.utils.AcsExcecao;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +38,28 @@ public class RequisicaoControlador {
     public ResponseEntity<Map<String, Object>> listarRequisicoesPaginas(@RequestParam(defaultValue = "0") int pagina,
                                                                         @RequestParam(defaultValue = "10") int quantidade) {
         return ResponseEntity.ok(servico.listarRequisicoesPaginadas(pagina, quantidade));
+    }
+    
+    @Operation(summary = "Listar requisicões do aluno páginada")
+    @GetMapping("/aluno/paginacao")
+    public  ResponseEntity<?> listarRequisicaoPorAlunoPaginacao(
+            @RequestParam Long alunoId,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int quantidade
+    ) {
+        return ResponseEntity.ok(servico.listarRequisicoesPorAlunoPaginadas(alunoId, pagina, quantidade));
+    }
+    
+    @Operation(summary = "Listar requisicões do aluno páginada por eixo")
+    @GetMapping("/eixo")
+    public  ResponseEntity<?> listarRequisicaoPorAlunoPaginacaoEixo(
+            @RequestParam Long alunoId,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int quantidade,
+            @RequestParam EixoEnum eixo
+    ) {
+        return ResponseEntity.ok(servico.listarRequisicoesPorAlunoPaginadasEixo(alunoId, eixo, pagina, quantidade));
+
     }
 
     @Operation(summary = "Listar as requisições de um usuário específico")

@@ -1,10 +1,13 @@
 package br.upe.acs.servico;
 
+import br.upe.acs.controlador.respostas.CertificadoResposta;
+
 import br.upe.acs.controlador.respostas.RequisicaoSimplesResposta;
 import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.Certificado;
 import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.dominio.enums.CertificadoStatusEnum;
+import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
 import br.upe.acs.repositorio.CertificadoRepositorio;
 import br.upe.acs.repositorio.RequisicaoRepositorio;
@@ -164,6 +167,43 @@ public class RequisicaoServico implements IRequisicaoServico {
 				.map(RequisicaoSimplesResposta::new).toList();
 
 		return gerarPaginacaoRequisicoes(requisicoes, pagina, quantidade);
+	}
+    
+    @Override
+    public Map<String, Object> listarRequisicoesPorAlunoPaginadas(Long alunoId, int pagina, int quantidade) {
+		Usuario usuario = usuarioServico.buscarUsuarioPorId(alunoId);
+		List<RequisicaoSimplesResposta> requisicoesAluno = new ArrayList<>(usuario.getRequisicoes().stream()
+				.filter(requisicao -> requisicao.getStatusRequisicao() != RequisicaoStatusEnum.RASCUNHO)
+				.sorted(Comparator.comparing(Requisicao::getDataDeSubmissao).reversed())
+				.map(RequisicaoSimplesResposta::new).toList());
+
+		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
+	}
+    
+    @Override
+    public Map<String, Object> listarRequisicoesPorAlunoPaginadasEixo(Long alunoId, EixoEnum eixo, int pagina, int quantidade) {
+		
+    	Usuario usuario = usuarioServico.buscarUsuarioPorId(alunoId);
+		List<Requisicao> requisicoes = usuario.getRequisicoes().stream()
+				.filter(requisicao -> requisicao.getStatusRequisicao() != RequisicaoStatusEnum.RASCUNHO).toList();
+		
+		List<Requisicao> requisicoesFiltro = new ArrayList<>();
+		List<CertificadoResposta> certificados = new ArrayList<>();
+		
+		for (Requisicao req : requisicoes) {	
+			certificados = req.getCertificados().stream()
+					.filter(certificado -> certificado.getAtividade().getEixo().equals(eixo))
+					.map(CertificadoResposta::new).toList();
+			if(!certificados.isEmpty()) {
+				requisicoesFiltro.add(req);
+			}
+		}
+		
+		List<RequisicaoSimplesResposta> requisicoesAluno = new ArrayList<>(requisicoesFiltro.stream()
+				.map(RequisicaoSimplesResposta::new).toList());
+
+
+		return gerarPaginacaoRequisicoes(requisicoesAluno, pagina, quantidade);
 	}
 
     @Override
