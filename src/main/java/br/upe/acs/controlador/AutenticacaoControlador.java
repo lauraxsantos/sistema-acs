@@ -54,7 +54,7 @@ public class AutenticacaoControlador {
     }
     
     @Operation(summary = "Solicitar novo código de verificação")
-    @GetMapping("/verificacao/novo")
+    @PatchMapping("/verificacao/novo")
     public ResponseEntity<MensagemUtil> alterarCodigoVerificacao(HttpServletRequest request) {
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
         return ResponseEntity.ok(new MensagemUtil(servico.alterarCodigoVerificacao(email)));
