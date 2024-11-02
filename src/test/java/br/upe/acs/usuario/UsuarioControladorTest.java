@@ -1,6 +1,7 @@
 package br.upe.acs.usuario;
 
 import br.upe.acs.config.JwtService;
+
 import br.upe.acs.controlador.CursoControlador;
 import br.upe.acs.controlador.UsuarioControlador;
 import br.upe.acs.controlador.respostas.UsuarioResposta;
@@ -12,7 +13,7 @@ import br.upe.acs.dominio.dto.AlterarSenhaDTO;
 import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.repositorio.UsuarioRepositorio;
-
+import br.upe.acs.servico.CursoServico;
 import br.upe.acs.servico.UsuarioServico;
 import br.upe.acs.utils.AcsExcecao;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.*;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -54,6 +57,9 @@ public class UsuarioControladorTest {
 
     @MockBean
     private UsuarioServico servico;
+    
+    @MockBean
+    private CursoServico cursoServico;
 
     @MockBean
     private UsuarioRepositorio usuarioRepositorio;
@@ -66,7 +72,7 @@ public class UsuarioControladorTest {
 
     @Test
     @WithMockUser
-    public void listarUsuario_DeveRetornarUsuarioPeloId() throws Exception {
+    public void listarUsuarioId() throws Exception {
         Long usuarioId = 1L;
         Usuario usuario = new Usuario();
 
@@ -101,7 +107,7 @@ public class UsuarioControladorTest {
 
     @Test
     @WithMockUser
-    public void listarUsuario_DeveRetornarPerfilDoUsuario() throws Exception {
+    public void listarUsuario() throws Exception {
 
         String usuarioEmail = "joao.silva@example.com";
         String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
@@ -137,6 +143,7 @@ public class UsuarioControladorTest {
                 .andExpect(jsonPath("$.perfis").value("ALUNO"))
                 .andExpect(jsonPath("$.curso").exists());
     }
+
 
     @Test
     @WithMockUser
@@ -185,5 +192,44 @@ public class UsuarioControladorTest {
                 .andExpect(jsonPath("$.totalItens").value(1))
                 .andExpect(jsonPath("$.totalPaginas").value(1));
     }
+    
+    @Test
+    @WithMockUser// Certifique-se de que o usuário tem a role necessária
+    public void alterarInformacoes() throws Exception {
+        String usuarioEmail = "joao.silva@example.com";
+        String nomeCompleto = "Ana";
+        String telefone = "(81) 98765-4321";
+        Long cursoId = 1L;
+
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setNomeCompleto("João da Silva");
+        usuario.setMatricula("2023123456");
+        usuario.setPeriodo(5);
+        usuario.setTelefone("(81) 98765-4321");
+        usuario.setEmail(usuarioEmail);
+        usuario.setVerificado(true);
+        usuario.setPerfil(PerfilEnum.ALUNO);
+        usuario.setCurso(new Curso());
+
+        // Simula o comportamento do jwtService
+        when(jwtService.extractUsername(anyString())).thenReturn(usuarioEmail);
+        when(servico.buscarUsuarioPorEmail(usuarioEmail)).thenReturn(usuario);
+
+        // Executa a requisição usando MockMvc
+        mockMvc.perform(put("/api/usuario/informacoes")
+                .header("Authorization", "Bearer fake.token")
+                .param("nomeCompleto", nomeCompleto)
+                .param("telefone", telefone)
+                .param("cursoId", cursoId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent()); 
+        
+        verify(servico).alterarDados(usuarioEmail, nomeCompleto, telefone, cursoId);
+
+    }
 }
+    
+
+
 

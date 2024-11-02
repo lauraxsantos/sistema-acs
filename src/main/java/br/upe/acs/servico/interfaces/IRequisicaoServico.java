@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import br.upe.acs.dominio.Requisicao;
+import br.upe.acs.dominio.enums.EixoEnum;
 
 public interface IRequisicaoServico {
 	 public Long adicionarRequisicao(String email);
@@ -25,4 +26,8 @@ public interface IRequisicaoServico {
 	 public String desarquivarRequisicao(Long id, String email);
 	 
 	 public List<Requisicao> listarRequisicoesArquivadas(String email);
+
+	Map<String, Object> listarRequisicoesPorAlunoPaginadasEixo(Long alunoId, EixoEnum eixo, int pagina, int quantidade);
+
+	Map<String, Object> listarRequisicoesPorAlunoPaginadas(Long alunoId, int pagina, int quantidade);
 }
