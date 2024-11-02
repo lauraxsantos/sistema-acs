@@ -1,8 +1,10 @@
 package br.upe.acs.atividade;
 
+import br.upe.acs.config.JwtService;
 import br.upe.acs.controlador.AtividadeControlador;
 import br.upe.acs.dominio.Atividade;
 import br.upe.acs.dominio.dto.AtividadeDTO;
+import br.upe.acs.repositorio.UsuarioRepositorio;
 import br.upe.acs.servico.AtividadeServico;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -18,9 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -34,15 +37,28 @@ public class AtividadeTest {
     @MockBean
     private AtividadeServico servico;
 
+    @MockBean
+    private UsuarioRepositorio usuarioRepositorio;
+
+    @MockBean
+    private JwtService jwtService;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
+        when(jwtService.isTokenValid(anyString(), any(UserDetails.class))).thenReturn(true);
     }
+
 
     @Test
     @WithMockUser
-    public void listarAtividades_DeveRetornarListaDeAtividades() throws Exception {
+    public void listarAtividadesTest() throws Exception {
         // Arrange
+
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
+
         Atividade atividade1 = new Atividade();
         atividade1.setId(1L);
         atividade1.setDescricao("Atividade de Matemática");
@@ -58,10 +74,12 @@ public class AtividadeTest {
         atividade2.setChPorCertificado(25);
 
         List<Atividade> atividades = Arrays.asList(atividade1, atividade2);
+
         when(servico.listarAtividades()).thenReturn(atividades);
 
         // Act & Assert
         mockMvc.perform(get("/api/atividade")
+                        .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
@@ -75,8 +93,13 @@ public class AtividadeTest {
 
     @Test
     @WithMockUser
-    public void buscarAtividadePorId_DeveRetornarAtividade() throws Exception {
+    public void buscarAtividadePorIdTest() throws Exception {
         // Arrange
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
+
+
         Long atividadeId = 1L;
         Atividade atividade = new Atividade();
         atividade.setId(atividadeId);
@@ -87,6 +110,7 @@ public class AtividadeTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/atividade/{id}", atividadeId)
+                        .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(atividadeId))
@@ -96,8 +120,11 @@ public class AtividadeTest {
 
     @Test
     @WithMockUser
-    public void buscarAtividadePorEixo_DeveRetornarListaDeAtividadesPorEixo() throws Exception {
+    public void buscarAtividadePorEixoTest() throws Exception {
         // Arrange
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
         String eixo = "MATEMATICA";
         Atividade atividade1 = new Atividade();
         atividade1.setId(1L);
@@ -109,6 +136,7 @@ public class AtividadeTest {
         // Act & Assert
         mockMvc.perform(get("/api/atividade/eixo")
                         .param("eixo", eixo)
+                        .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -118,8 +146,11 @@ public class AtividadeTest {
 
     @Test
     @WithMockUser
-    public void criarAtividade_DeveRetornarAtividadeCriada() throws Exception {
+    public void criarAtividadeTest() throws Exception {
         // Arrange
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
         AtividadeDTO atividadeDTO = new AtividadeDTO();
         atividadeDTO.setDescricao("Nova Atividade");
         atividadeDTO.setCriteriosParaAvaliacao("Critérios para Nova Atividade");
@@ -137,8 +168,10 @@ public class AtividadeTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/atividade")
+                        .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"descricao\": \"Nova Atividade\", \"criteriosParaAvaliacao\": \"Critérios para Nova Atividade\", \"chMaxima\": 60, \"chPorCertificado\": 20}"))
+                        .content("{\"descricao\": \"Nova Atividade\", \"criteriosParaAvaliacao\": \"Critérios para Nova Atividade\", \"chMaxima\": 60, \"chPorCertificado\": 20}")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.descricao").value("Nova Atividade"))
@@ -149,8 +182,11 @@ public class AtividadeTest {
 
     @Test
     @WithMockUser
-    public void alterarAtividade_DeveRetornarAtividadeAlterada() throws Exception {
+    public void alterarAtividadeTest() throws Exception {
         // Arrange
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
         Long atividadeId = 1L;
         AtividadeDTO atividadeDTO = new AtividadeDTO();
         atividadeDTO.setDescricao("Atividade Alterada");
@@ -163,8 +199,10 @@ public class AtividadeTest {
 
         // Act & Assert
         mockMvc.perform(put("/api/atividade/{id}", atividadeId)
+                        .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"descricao\": \"Atividade Alterada\"}"))
+                        .content("{\"descricao\": \"Atividade Alterada\"}")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(atividadeId))
                 .andExpect(jsonPath("$.descricao").value("Atividade Alterada"));
@@ -172,13 +210,18 @@ public class AtividadeTest {
 
     @Test
     @WithMockUser
-    public void excluirAtividade_DeveRetornarNoContent() throws Exception {
+    public void excluirAtividadeTest() throws Exception {
         // Arrange
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
         Long atividadeId = 1L;
 
         // Act & Assert
         mockMvc.perform(delete("/api/atividade/{id}", atividadeId)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 }
