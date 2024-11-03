@@ -1,107 +1,168 @@
 package br.upe.acs.certificado;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 import br.upe.acs.config.JwtService;
 import br.upe.acs.controlador.CertificadoControlador;
+import br.upe.acs.controlador.respostas.ArquivoResposta;
+import br.upe.acs.controlador.respostas.CertificadoResposta;
 import br.upe.acs.dominio.Certificado;
+import br.upe.acs.dominio.dto.CertificadoDTO;
 import br.upe.acs.dominio.enums.CertificadoStatusEnum;
+import br.upe.acs.repositorio.UsuarioRepositorio;
 import br.upe.acs.servico.CertificadoServico;
-import br.upe.acs.utils.AcsExcecao;
-import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.Date;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.eq;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(CertificadoControlador.class)
 public class CertificadoControladorTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private CertificadoServico servico;
 
-    @Mock
+    @MockBean
     private JwtService jwtService;
 
-    @InjectMocks
-    private CertificadoControlador controlador;
+    @MockBean
+    private UsuarioRepositorio usuarioRepositorio;
 
-    public static Certificado createMockCertificado() {
-        Certificado certificado = new Certificado();
-        certificado.setId(1L);
-        certificado.setTitulo("Certificado Teste");
-        certificado.setObservacao("Observação do certificado");
-        certificado.setDataInicial(new Date());
-        certificado.setDataFinal(new Date());
-        certificado.setCargaHoraria(40.0f);
-        certificado.setCertificado(new byte[]{1, 2, 3});
-        certificado.setStatusCertificado(CertificadoStatusEnum.RASCUNHO);
-        return certificado;
+
+    private String token;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+        token = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ.L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
+        when(jwtService.isTokenValid(any(), any())).thenReturn(true);
     }
 
     @Test
-    public void testAdicionarCertificado_RequisicaoNaoPertenceAoUsuario_ReturnBadRequest() throws IOException, AcsExcecao {
-        // Simulando as entradas
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        MultipartFile certificado = mock(MultipartFile.class);
+    @WithMockUser
+    public void buscarCertificadoPorIdTest() throws Exception {
+        Long certificadoId = 1L;
+
+        Certificado certificadoMock = Mockito.mock(Certificado.class);
+        when(certificadoMock.getId()).thenReturn(certificadoId);
+        when(certificadoMock.getTitulo()).thenReturn("Título do Certificado");
+
+        when(servico.buscarCertificadoPorId(certificadoId)).thenReturn(certificadoMock);
+
+        CertificadoResposta respostaEsperada = new CertificadoResposta(certificadoMock);
+
+        mockMvc.perform(get("/api/certificado/{id}", certificadoId)
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(respostaEsperada.getId()))
+                .andExpect(jsonPath("$.titulo").value(respostaEsperada.getTitulo()));
+    }
+
+
+
+    @Test
+    @WithMockUser
+    public void buscarPdfDoCertificadoPorIdTest() throws Exception {
+        Long certificadoId = 1L;
+        byte[] pdfContent = "dummyPdfContent".getBytes();
+
+        when(servico.buscarPdfDoCertificadoPorId(certificadoId)).thenReturn(pdfContent);
+
+        mockMvc.perform(get("/api/certificado/{id}/pdf", certificadoId)
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/pdf"))
+                .andExpect(content().bytes(pdfContent));
+    }
+
+
+    @Test
+    @WithMockUser
+    public void adicionarCertificadoTest() throws Exception {
         Long requisicaoId = 1L;
+        String email = "usuario@exemplo.com";
+        MockMultipartFile certificado = new MockMultipartFile("certificado", "dummy.pdf", "application/pdf", "dummy content".getBytes());
 
-        // Simulando um token JWT válido com o email do usuário que não pertence à requisição
-        String token = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhh"
-        		+ "bXBsZS5jb20ifQ.L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
-  
-        
+        Long certificadoId = 1L;
+        when(servico.adicionarCertificado(any(MultipartFile.class), anyLong(), any(String.class))).thenReturn(certificadoId);
 
-        // Definindo o comportamento do mock do jwtService para extrair o email do token
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token); // Adicionando o prefixo "Bearer"
-        when(jwtService.extractUsername(eq(token))).thenReturn("email_do_usuario_logado"); // Usando o token sem o prefixo "Bearer"
-
-        // Definindo o comportamento do mock do servico para lançar exceção quando a Requisição não pertencer ao usuário
-        when(servico.adicionarCertificado(eq(certificado), eq(requisicaoId), eq("email_do_usuario_logado")))
-                .thenThrow(new AcsExcecao("Esse id não pertence a nenhuma requisição do aluno!"));
-
-        // Executando o método do controlador
-        ResponseEntity<?> resposta = controlador.adicionarCertificado(request, requisicaoId, certificado);
-
-        // Verificando se a resposta é a esperada
-        assertEquals(404, resposta.getStatusCodeValue());
-        assertEquals("Esse id não pertence a nenhuma requisição do aluno!", resposta.getBody());
+        mockMvc.perform(multipart("/api/certificado")
+                        .file(certificado)
+                        .param("requisicaoId", requisicaoId.toString())
+                        .param("email", email)
+                        .header("Authorization", token)
+                        .with(csrf()))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/certificado/" + certificadoId));
     }
 
     @Test
-    public void testAdicionarCertificado_RequisicaoPertenceAoUsuario_ReturnCreated() throws IOException, AcsExcecao {
-        // Simulando as entradas
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        MultipartFile certificado = mock(MultipartFile.class);
-        Long requisicaoId = 1L;
+    @WithMockUser
+    public void alterarCertificadoTest() throws Exception {
+        Long certificadoId = 1L;
+        String email = "usuario@exemplo.com";
 
-        // Simulando um token JWT válido com o email do usuário que pertence à requisição
-        String token = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5"
-        		+ "jb20ifQ.L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
+        Certificado certificadoMock = new Certificado();
+        certificadoMock.setId(certificadoId);
+        certificadoMock.setTitulo("Título Original");
 
-        // Definindo o comportamento do mock do jwtService para extrair o email do token
-        when(request.getHeader("Authorization")).thenReturn(token);
-        when(jwtService.extractUsername(eq("eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5j"
-        		+ "b20ifQ.L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0"))).thenReturn("email_do_usuario_logado");
+        CertificadoDTO certificadoDTO = new CertificadoDTO();
+        certificadoDTO.setTitulo("Certificado Alterado");
 
-        // Definindo o comportamento do mock do servico para retornar o id do Certificado quando a Requisição pertencer ao usuário
-        when(servico.adicionarCertificado(eq(certificado), eq(requisicaoId), eq("email_do_usuario_logado"))).thenReturn(1234L);
+        when(servico.buscarCertificadoPorId(certificadoId)).thenReturn(certificadoMock);
 
-        // Executando o método do controlador
-        ResponseEntity<?> resposta = controlador.adicionarCertificado(request, requisicaoId, certificado);
+        mockMvc.perform(put("/api/certificado/{id}", certificadoId)
+                        .header("Authorization", token)
+                        .param("email", email)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\": \"Certificado Alterado\"}")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
 
-        // Verificando se a resposta é a esperada
-        assertEquals(201, resposta.getStatusCodeValue());
-        assertEquals(1234L, resposta.getBody());
+        verify(servico).alterarCertificado(eq(certificadoId), any(CertificadoDTO.class), eq(email));
     }
-  
+
+    @Test
+    @WithMockUser
+    public void excluirCertificadoTest() throws Exception {
+        Long certificadoId = 1L;
+        String email = "usuario@exemplo.com";
+
+        Certificado certificadoMock = new Certificado();
+        certificadoMock.setId(certificadoId);
+        certificadoMock.setStatusCertificado(CertificadoStatusEnum.RASCUNHO);
+
+        when(servico.buscarCertificadoPorId(certificadoId)).thenReturn(certificadoMock);
+
+        mockMvc.perform(delete("/api/certificado/{id}", certificadoId)
+                        .header("Authorization", token)
+                        .param("email", email)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(servico).excluirCertificado(certificadoId, email);
+    }
+
 }
