@@ -57,7 +57,7 @@ public class UsuarioControladorTest {
 
     @MockBean
     private UsuarioServico servico;
-    
+
     @MockBean
     private CursoServico cursoServico;
 
@@ -192,7 +192,7 @@ public class UsuarioControladorTest {
                 .andExpect(jsonPath("$.totalItens").value(1))
                 .andExpect(jsonPath("$.totalPaginas").value(1));
     }
-    
+
     @Test
     @WithMockUser// Certifique-se de que o usuário tem a role necessária
     public void alterarInformacoes() throws Exception {
@@ -223,13 +223,13 @@ public class UsuarioControladorTest {
                 .param("telefone", telefone)
                 .param("cursoId", cursoId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent()); 
-        
+                .andExpect(status().isNoContent());
+
         verify(servico).alterarDados(usuarioEmail, nomeCompleto, telefone, cursoId);
 
     }
 }
-    
+
 
 
 
