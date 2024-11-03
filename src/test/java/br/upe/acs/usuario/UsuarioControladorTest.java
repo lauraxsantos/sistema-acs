@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.*;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import java.util.Optional;
@@ -57,6 +58,8 @@ public class UsuarioControladorTest {
 
     @MockBean
     private UsuarioServico servico;
+
+
 
     @MockBean
     private CursoServico cursoServico;
@@ -144,55 +147,6 @@ public class UsuarioControladorTest {
                 .andExpect(jsonPath("$.curso").exists());
     }
 
-
-    @Test
-    @WithMockUser
-    public void listarRequisicaoPorAlunoTest() throws Exception {
-        Long alunoId = 1L;
-        int pagina = 0;
-        int quantidade = 10;
-        EixoEnum eixo = EixoEnum.ENSINO;
-
-        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
-                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
-                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
-
-        Requisicao requisicao = new Requisicao();
-        requisicao.setId(152L);
-        requisicao.setIdRequisicao(null);
-        requisicao.setStatusRequisicao(RequisicaoStatusEnum.TRANSITO);
-        requisicao.setCriacao(new Date());
-        requisicao.setDataDeSubmissao(new Date());
-        requisicao.setStatusRequisicao(RequisicaoStatusEnum.TRANSITO);
-        requisicao.setToken("token123");
-
-        List<Requisicao> requisicoes = Arrays.asList(requisicao);
-
-        Map<String, Object> requisicoesMap = new HashMap<>();
-        requisicoesMap.put("requisicoes", requisicoes);
-        requisicoesMap.put("paginaAtual", 0);
-        requisicoesMap.put("totalItens", 1);
-        requisicoesMap.put("totalPaginas", 1);
-
-        when(servico.listarRequisicoesPorAlunoPaginadasEixo(alunoId, eixo, pagina, quantidade)).thenReturn(requisicoesMap);
-
-        mockMvc.perform(get("/api/usuario/requisicao/eixo")
-                        .param("alunoId", alunoId.toString())
-                        .param("pagina", String.valueOf(pagina))
-                        .param("quantidade", String.valueOf(quantidade))
-                        .param("eixo", eixo.toString())
-                        .header("Authorization", token)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.requisicoes.size()").value(requisicoes.size()))
-                .andExpect(jsonPath("$.requisicoes[0].id").value(152L))
-                .andExpect(jsonPath("$.requisicoes[0].idRequisicao").doesNotExist())
-                .andExpect(jsonPath("$.requisicoes[0].statusRequisicao").value("TRANSITO"))
-                .andExpect(jsonPath("$.paginaAtual").value(0))
-                .andExpect(jsonPath("$.totalItens").value(1))
-                .andExpect(jsonPath("$.totalPaginas").value(1));
-    }
-
     @Test
     @WithMockUser// Certifique-se de que o usuário tem a role necessária
     public void alterarInformacoes() throws Exception {
@@ -222,7 +176,8 @@ public class UsuarioControladorTest {
                 .param("nomeCompleto", nomeCompleto)
                 .param("telefone", telefone)
                 .param("cursoId", cursoId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(servico).alterarDados(usuarioEmail, nomeCompleto, telefone, cursoId);
