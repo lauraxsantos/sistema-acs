@@ -2,6 +2,7 @@ package br.upe.acs.utils;
 
 import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.dominio.Usuario;
+import br.upe.acs.servico.interfaces.IEmailService;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -12,22 +13,15 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class EmailUtils {
-	
-	private final JavaMailSender emailRemetente;
-	
+
+	private final IEmailService emailService;
+
 	public void enviarEmail(EmailDTO emailInfo) {
-		SimpleMailMessage email = new SimpleMailMessage();
-		email.setFrom("lapesupe@gmail.com");
-		email.setTo(emailInfo.getDestinatario());
-		email.setText(emailInfo.getMensagem());
-		email.setSubject(emailInfo.getAssunto());
-		
-		emailRemetente.send(email);
+		emailService.enviar(emailInfo);
 	}
 
 	public void enviarEmailCodigoVerificacao(String email, String codigoVerificacao) {
 		EmailDTO emailDTO = new EmailDTO();
-
 		emailDTO.setAssunto("Código de verificação - Sistema ACs UPE");
 		emailDTO.setDestinatario(email);
 		emailDTO.setMensagem(
