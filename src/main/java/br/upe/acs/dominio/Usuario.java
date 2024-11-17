@@ -57,6 +57,9 @@ public class Usuario implements UserDetails {
     @OneToMany(mappedBy = "usuario")
     private List<Requisicao> requisicoes;
     
+    @OneToMany(mappedBy = "comissao")
+    private List<Requisicao> requisicoesCoordenador;
+    
     @ManyToOne
     private Endereco endereco;
     

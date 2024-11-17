@@ -3,6 +3,7 @@ package br.upe.acs.controlador;
 import br.upe.acs.config.JwtService;
 
 import br.upe.acs.controlador.respostas.UsuarioResposta;
+import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.servico.UsuarioServico;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,7 +47,18 @@ public class UsuarioControlador {
         servico.alterarDados(email, nomeCompleto, telefone, cursoId);
         return ResponseEntity.noContent().build();
     }
-
+    
+    @Operation(summary = "Alterar perfil de usuário")
+    @PutMapping("/informacoes/perfil")
+    public ResponseEntity<?> alterarPerfil(
+            HttpServletRequest request,
+            @RequestParam PerfilEnum perfil
+    ) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        servico.alterarPerfil(email, perfil);
+        return ResponseEntity.noContent().build();
+    }
+    
     @Operation(summary = "Desativar meu Perfil")
     @DeleteMapping
     public ResponseEntity<?> desativarPerfilDoUsuário(HttpServletRequest request) {
