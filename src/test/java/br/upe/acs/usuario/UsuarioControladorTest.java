@@ -88,6 +88,7 @@ public class UsuarioControladorTest {
         usuario.setVerificado(true);
         usuario.setPerfil(PerfilEnum.ALUNO);
         usuario.setCurso(new Curso());
+        usuario.setEndereco(new Endereco());
 
         when(servico.buscarUsuarioPorId(usuarioId)).thenReturn(usuario);
 
@@ -127,6 +128,7 @@ public class UsuarioControladorTest {
         usuario.setVerificado(true);
         usuario.setPerfil(PerfilEnum.ALUNO);
         usuario.setCurso(new Curso());
+        usuario.setEndereco(new Endereco());
 
         when(jwtService.extractUsername(anyString())).thenReturn(usuarioEmail);
 
@@ -148,7 +150,7 @@ public class UsuarioControladorTest {
     }
 
     @Test
-    @WithMockUser// Certifique-se de que o usuário tem a role necessária
+    @WithMockUser
     public void alterarInformacoes() throws Exception {
         String usuarioEmail = "joao.silva@example.com";
         String nomeCompleto = "Ana";
@@ -165,12 +167,12 @@ public class UsuarioControladorTest {
         usuario.setVerificado(true);
         usuario.setPerfil(PerfilEnum.ALUNO);
         usuario.setCurso(new Curso());
+        usuario.setEndereco(new Endereco());
 
-        // Simula o comportamento do jwtService
         when(jwtService.extractUsername(anyString())).thenReturn(usuarioEmail);
         when(servico.buscarUsuarioPorEmail(usuarioEmail)).thenReturn(usuario);
 
-        // Executa a requisição usando MockMvc
+
         mockMvc.perform(put("/api/usuario/informacoes")
                 .header("Authorization", "Bearer fake.token")
                 .param("nomeCompleto", nomeCompleto)
