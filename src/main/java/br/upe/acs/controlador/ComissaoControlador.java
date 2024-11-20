@@ -1,7 +1,5 @@
 package br.upe.acs.controlador;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -14,8 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import br.upe.acs.config.JwtService;
 import br.upe.acs.controlador.respostas.CertificadoResposta;
 import br.upe.acs.controlador.respostas.RequisicaoResposta;
-import br.upe.acs.dominio.Certificado;
-import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.dominio.enums.CertificadoStatusEnum;
 import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
 import br.upe.acs.servico.ComissaoServico;
@@ -50,11 +46,11 @@ public class ComissaoControlador {
     		HttpServletRequest request, 
     		@RequestParam Long certificadoId, 
     		@RequestParam CertificadoStatusEnum status, 
-    		@RequestParam String observacao) 
+    		@RequestParam(defaultValue = "") String observacao,
+    		@RequestParam float cargaHoraria) 
     {
     	String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
-    	return ResponseEntity.ok(new CertificadoResposta(servico.avaliarCertificado(certificadoId, email, status, observacao)));
-//    	return ResponseEntity.noContent().build();   	
+    	return ResponseEntity.ok(new CertificadoResposta(servico.avaliarCertificado(certificadoId, email, status, observacao, cargaHoraria))); 	
     }
     
     @Operation(summary = "Avaliar Requisição")

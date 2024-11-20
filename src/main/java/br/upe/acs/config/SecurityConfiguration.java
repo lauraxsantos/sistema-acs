@@ -33,7 +33,7 @@ public class SecurityConfiguration {
 						.permitAll()
 						.requestMatchers("api/comissao/**")
 						.hasAnyAuthority("COMISSAO", "ADMINISTRADOR")
-						.requestMatchers("api/requisicao/paginacao/**", "api/usuario/informacoes/perfil/**")
+						.requestMatchers("api/requisicao/paginacao/**", "api/usuario/informacoes/perfil/**", "api/coordenador/**")
 						.hasAnyAuthority("COORDENADOR", "ADMINISTRADOR")
 					.anyRequest().authenticated()
 			)

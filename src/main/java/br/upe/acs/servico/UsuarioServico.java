@@ -28,10 +28,6 @@ public class UsuarioServico implements IUsuarioServico {
     private final UsuarioRepositorio repositorio;
 
 	private final CursoServico cursoServico;
-	
-	private final RequisicaoRepositorio requisicaoRepositorio;
-	
-	private final EmailUtils emailServico;
 
 	@Override
     public Usuario buscarUsuarioPorId(Long id){
@@ -63,19 +59,7 @@ public class UsuarioServico implements IUsuarioServico {
     	repositorio.save(usuario);
     	
     }
-	
-//    @Override
-//    public void mandarRequisicaoComissao(Long requisicaoId, String email) {
-//    	Usuario usuario = buscarUsuarioPorEmail(email);
-//    	Requisicao requisicao = requisicaoServico.buscarRequisicaoPorId(requisicaoId);
-//    	
-//    	requisicao.setComissao(usuario);
-//    	requisicaoRepositorio.save(requisicao);    	
-//    	
-//    	CompletableFuture.runAsync(() -> emailServico.enviarEmailRecebimentoRequisicao(requisicao));
-//    	    	
-//    }    
-    
+	    
 	@Override
 	public void desativarPerfilDoUsuario(String email) {
 		Usuario usuario = buscarUsuarioPorEmail(email);

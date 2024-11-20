@@ -41,14 +41,14 @@ public class ComissaoServico {
 	
 	public Map<String, Object> listarRequisicoesPaginadas(String email, int pagina, int quantidade){
 		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
-		List<RequisicaoSimplesResposta> requisicoesComissao = new ArrayList<>(comissao.getRequisicoesCoordenador().stream()
+		List<RequisicaoSimplesResposta> requisicoesComissao = new ArrayList<>(comissao.getRequisicoesComissao().stream()
 				.filter(requisicao -> !requisicao.isArquivada())
 				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
 				.map(RequisicaoSimplesResposta::new).toList());
 		return gerarPaginacaoRequisicoes(requisicoesComissao, pagina, quantidade);
 	}
     
-    public Certificado avaliarCertificado(Long certificadoId, String email, CertificadoStatusEnum status, String observacao) {
+    public Certificado avaliarCertificado(Long certificadoId, String email, CertificadoStatusEnum status, String observacao, float cargaHoraria) {
 		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
 		
 		Certificado certificado = certificadoServico.buscarCertificadoPorId(certificadoId);
@@ -64,13 +64,13 @@ public class ComissaoServico {
 			EixoEnum eixo = certificado.getAtividade().getEixo();
 			
 			if (eixo == EixoEnum.ENSINO) {
-				aluno.setHorasEnsino(certificado.getCargaHoraria());
+				aluno.setHorasEnsino(cargaHoraria);
 			} else if (eixo == EixoEnum.EXTENSAO) {
-				aluno.setHorasExtensao(certificado.getCargaHoraria());
+				aluno.setHorasExtensao(cargaHoraria);
 			} else if (eixo == EixoEnum.GESTAO) {
-				aluno.setHorasGestao(certificado.getCargaHoraria());
+				aluno.setHorasGestao(cargaHoraria);
 			} else {
-				aluno.setHorasPesquisa(certificado.getCargaHoraria());
+				aluno.setHorasPesquisa(cargaHoraria);
 			}
 		} else if (status == CertificadoStatusEnum.PROBLEMA) {
 			certificado.setObservacao(observacao);
