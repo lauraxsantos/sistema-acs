@@ -2,7 +2,6 @@ package br.upe.acs.servico;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
@@ -15,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+
 import br.upe.acs.config.JwtService;
 import br.upe.acs.controlador.respostas.AutenticacaoResposta;
 import br.upe.acs.dominio.dto.EnderecoDTO;
@@ -23,6 +23,7 @@ import br.upe.acs.dominio.dto.RegistroDTO;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.utils.AcsExcecao;
 import br.upe.acs.utils.EmailUtils;
+import br.upe.acs.utils.validacaoUsuario.ValidacaoUtils;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -45,11 +46,14 @@ public class AutenticacaoServico implements IAutenticacaoServico {
 
     @Override
     public AutenticacaoResposta cadastrarUsuario(RegistroDTO registro) {
-        verificarDadosUnicos(registro.getEmail(), registro.getCpf());
-		validarSenha(registro.getSenha());
-		validarEmailInstitucional(registro.getEmail());
-		validarMatricula(registro.getMatricula());
-		validarPeriodo(registro.getPeriodo());
+    	
+    	verificarDadosUnicos(registro.getEmail(), registro.getCpf());
+              
+        ValidacaoUtils validationService = new ValidacaoUtils();
+        validationService.validate("senha", registro.getSenha());
+        validationService.validate("email", registro.getEmail());
+        validationService.validate("matricula", registro.getMatricula());
+        validationService.validate("periodo", Integer.toString(registro.getPeriodo()));
 
 		Usuario usuarioSalvar = new Usuario();
 		Endereco enderecoSalvo = adicionarEnderecoUsuario(registro);
@@ -219,34 +223,6 @@ public class AutenticacaoServico implements IAutenticacaoServico {
 			}
 
 			throw new AcsExcecao(error.toString());
-		}
-	}
-
-	private void validarEmailInstitucional(String email) {
-		if (!email.split("@")[1].equals("upe.br")) {
-			throw new AcsExcecao("Email inválido! Por favor insira o email institucional válido.");
-		}
-	}
-	
-	private void validarMatricula(String matricula) {
-		
-		if(!matricula.matches("[0-9]+")) {
-			throw new AcsExcecao("Por favor, insira uma matrícula válida");
-		}
-
-		if(matricula.length() < 4 || matricula.length() > 9) {
-			throw new AcsExcecao("Por favor, insira uma matrícula válida");			
-		}
-
-		if(Integer.parseInt(matricula) < 1) {
-			throw new AcsExcecao("Por favor, insira uma matrícula válida");	
-		}		
-			
-	}
-	
-	private void validarPeriodo(int periodo){
-		if(periodo < 1 || periodo > 12) {
-			throw new AcsExcecao("Por favor, insira um período válido");
 		}
 	}
 

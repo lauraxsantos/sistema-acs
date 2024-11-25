@@ -1,13 +1,16 @@
 package br.upe.acs.usuario;
 
 import br.upe.acs.config.JwtService;
+
 import br.upe.acs.controlador.CursoControlador;
 import br.upe.acs.controlador.UsuarioControlador;
 import br.upe.acs.controlador.respostas.UsuarioResposta;
 import br.upe.acs.dominio.Curso;
 import br.upe.acs.dominio.Endereco;
+import br.upe.acs.dominio.Requisicao;
 import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.dto.AlterarSenhaDTO;
+import br.upe.acs.dominio.enums.EixoEnum;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.repositorio.UsuarioRepositorio;
 import br.upe.acs.servico.CursoServico;
@@ -30,14 +33,19 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
+import java.util.*;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import br.upe.acs.dominio.enums.RequisicaoStatusEnum;
 
 @WebMvcTest(UsuarioControlador.class)
 public class UsuarioControladorTest {
@@ -50,7 +58,9 @@ public class UsuarioControladorTest {
 
     @MockBean
     private UsuarioServico servico;
-    
+
+
+
     @MockBean
     private CursoServico cursoServico;
 
@@ -78,6 +88,7 @@ public class UsuarioControladorTest {
         usuario.setVerificado(true);
         usuario.setPerfil(PerfilEnum.ALUNO);
         usuario.setCurso(new Curso());
+        usuario.setEndereco(new Endereco());
 
         when(servico.buscarUsuarioPorId(usuarioId)).thenReturn(usuario);
 
@@ -117,6 +128,7 @@ public class UsuarioControladorTest {
         usuario.setVerificado(true);
         usuario.setPerfil(PerfilEnum.ALUNO);
         usuario.setCurso(new Curso());
+        usuario.setEndereco(new Endereco());
 
         when(jwtService.extractUsername(anyString())).thenReturn(usuarioEmail);
 
@@ -136,9 +148,9 @@ public class UsuarioControladorTest {
                 .andExpect(jsonPath("$.perfis").value("ALUNO"))
                 .andExpect(jsonPath("$.curso").exists());
     }
-    
+
     @Test
-    @WithMockUser// Certifique-se de que o usuário tem a role necessária
+    @WithMockUser
     public void alterarInformacoes() throws Exception {
         String usuarioEmail = "joao.silva@example.com";
         String nomeCompleto = "Ana";
@@ -155,44 +167,26 @@ public class UsuarioControladorTest {
         usuario.setVerificado(true);
         usuario.setPerfil(PerfilEnum.ALUNO);
         usuario.setCurso(new Curso());
+        usuario.setEndereco(new Endereco());
 
-        // Simula o comportamento do jwtService
         when(jwtService.extractUsername(anyString())).thenReturn(usuarioEmail);
         when(servico.buscarUsuarioPorEmail(usuarioEmail)).thenReturn(usuario);
 
-        // Executa a requisição usando MockMvc
+
         mockMvc.perform(put("/api/usuario/informacoes")
                 .header("Authorization", "Bearer fake.token")
                 .param("nomeCompleto", nomeCompleto)
                 .param("telefone", telefone)
                 .param("cursoId", cursoId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent()); 
-        
+                .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
         verify(servico).alterarDados(usuarioEmail, nomeCompleto, telefone, cursoId);
 
     }
 }
-    
-//    @Test
-//    @WithMockUser
-//    public void testDesativarPerfilDoUsuario() throws Exception {
-//        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
-//                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
-//                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
-//        String email = "usuario@example.com";
-//
-//        // Simulando a extração do nome de usuário do token
-//        when(jwtService.extractUsername(anyString())).thenReturn(email);
-//        doNothing().when(servico).desativarPerfilDoUsuario(email);
-//
-//        mockMvc.perform(delete("/api/usuario") 
-//                .header("Authorization", token)
-//                .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isNoContent());
-//
-//        // Verificando se o método do serviço foi chamado
-//        verify(servico, times(1)).desativarPerfilDoUsuario(email);
-//    }
-//}
+
+
+
 
