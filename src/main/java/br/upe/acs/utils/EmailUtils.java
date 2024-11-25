@@ -59,4 +59,16 @@ public class EmailUtils {
 				System.getenv("FRONTEND_URL") + "/account/reset/" + token);
 		enviarEmail(emailDTO);
 	}
+	
+	public void enviarEmailRecebimentoRequisicao(Requisicao requisicao) {
+		EmailDTO emailDTO = new EmailDTO();
+		emailDTO.setDestinatario(requisicao.getComissao().getEmail());
+		emailDTO.setAssunto("Modificação na sua requisição " + requisicao.getId() + " - Sistema ACs UPE");
+		emailDTO.setMensagem("Gostaríamos de informar que a requisição " + requisicao.getId()
+				+ " necessita da sua avaliação " + ".\n" +
+				"Para mais informações acesse o Sistema de ACs. " +
+				"Em caso de erros entre em contato com o turmaestest@gmail.com.\n" +
+				"Atenciosamente,\nCoordenação de " + requisicao.getCurso().getNome() + ".");
+		enviarEmail(emailDTO);
+	}
 }
