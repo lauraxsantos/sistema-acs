@@ -218,11 +218,11 @@ public class UsuarioControladorTest {
 
         // Executa a requisição usando MockMvc
         mockMvc.perform(put("/api/usuario/informacoes")
-                .header("Authorization", "Bearer fake.token")
-                .param("nomeCompleto", nomeCompleto)
-                .param("telefone", telefone)
-                .param("cursoId", cursoId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
+                        .header("Authorization", "Bearer fake.token")
+                        .param("nomeCompleto", nomeCompleto)
+                        .param("telefone", telefone)
+                        .param("cursoId", cursoId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
         verify(servico).alterarDados(usuarioEmail, nomeCompleto, telefone, cursoId);
