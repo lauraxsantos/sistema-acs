@@ -1,6 +1,8 @@
 package br.upe.acs.controlador;
 
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,6 +65,12 @@ public class ComissaoControlador {
     {
     	String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
     	return ResponseEntity.ok(new RequisicaoResposta(servico.avaliarRequisicao(requisicaoId, email, status, observacao)));    	
+    }
+    
+    @Operation(summary = "Listar Certificados Aprovados do Aluno")    
+    @GetMapping("/aluno/certificados")
+    public ResponseEntity<List<CertificadoResposta>> listarCertificadosPorAluno(@RequestParam Long requisicaoId){
+    	return ResponseEntity.ok(servico.listarCertificadosPorAluno(requisicaoId).stream().map(CertificadoResposta::new).toList());
     }
 
 }
