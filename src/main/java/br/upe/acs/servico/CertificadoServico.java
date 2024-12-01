@@ -106,7 +106,7 @@ public class CertificadoServico implements ICertificadoServico {
 		certificado.setCargaHoraria((certificadoDTO.getQuantidadeDeHoras()));
 		repositorio.save(certificado);
 	}
-
+	
 	public void excluirCertificado(Long certificadoId, String email) {
 		Certificado certificado = buscarCertificadoPorId(certificadoId);
 		if (!certificado.getRequisicao().getUsuario().getEmail().equals(email)) {

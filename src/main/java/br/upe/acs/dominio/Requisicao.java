@@ -40,6 +40,9 @@ public class Requisicao {
 
 	@ManyToOne
 	private Usuario usuario;
+	
+	@ManyToOne
+	private Usuario comissao;
 
 	@ManyToOne
 	private Curso curso;
