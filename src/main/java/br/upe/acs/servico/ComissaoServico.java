@@ -43,6 +43,15 @@ public class ComissaoServico {
 		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
 		List<RequisicaoSimplesResposta> requisicoesComissao = new ArrayList<>(comissao.getRequisicoesComissao().stream()
 				.filter(requisicao -> !requisicao.isArquivada())
+				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
+				.map(RequisicaoSimplesResposta::new).toList());
+		return gerarPaginacaoRequisicoes(requisicoesComissao, pagina, quantidade);
+	}
+
+	public Map<String, Object> listarRequisicoesPaginadasTransito(String email, int pagina, int quantidade){
+		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
+		List<RequisicaoSimplesResposta> requisicoesComissao = new ArrayList<>(comissao.getRequisicoesComissao().stream()
+				.filter(requisicao -> !requisicao.isArquivada())
 				.filter(requisicao -> requisicao.getStatusRequisicao() == RequisicaoStatusEnum.TRANSITO)
 				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
 				.map(RequisicaoSimplesResposta::new).toList());
