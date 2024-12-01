@@ -41,6 +41,17 @@ public class ComissaoControlador {
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
         return ResponseEntity.ok(servico.listarRequisicoesPaginadas(email, pagina, quantidade));
     }
+
+    @Operation(summary = "Listar todas as requisicoes Concluidas")
+    @GetMapping("/concluidas")
+    public  ResponseEntity<?> listarRequisicoesPaginadasConcluidas(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int quantidade
+    ) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        return ResponseEntity.ok(servico.listarRequisicoesPaginadasConcluidas(email, pagina, quantidade));
+    }
     
     @Operation(summary = "Avaliar Certificados")
     @PostMapping("/certificados")
