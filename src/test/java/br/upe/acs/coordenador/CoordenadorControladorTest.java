@@ -4,6 +4,7 @@ import br.upe.acs.config.JwtService;
 import br.upe.acs.controlador.CoordenadorControlador;
 import br.upe.acs.dominio.Certificado;
 import br.upe.acs.dominio.Curso;
+import br.upe.acs.dominio.Endereco;
 import br.upe.acs.dominio.Usuario;
 import br.upe.acs.dominio.enums.PerfilEnum;
 import br.upe.acs.repositorio.UsuarioRepositorio;
@@ -218,6 +219,23 @@ public class CoordenadorControladorTest {
         usuario2.setPerfil(PerfilEnum.COMISSAO);
         usuario2.setCurso(curso2);
 
+        Endereco endereco1 = new Endereco();
+        endereco1.setId(1L);
+        endereco1.setRua("Rua Exemplo");
+        endereco1.setNumero(123);
+        endereco1.setCidade("Cidade Exemplo");
+        endereco1.setUF("Estado Exemplo");
+        usuario1.setEndereco(endereco1);
+
+        Endereco endereco2 = new Endereco();
+        endereco2.setId(2L);
+        endereco2.setRua("Avenida Exemplo");
+        endereco2.setNumero(456);
+        endereco2.setCidade("Outra Cidade");
+        endereco2.setUF("Outro Estado");
+        usuario2.setEndereco(endereco2);
+
+
         List<Usuario> mockUsuarios = List.of(usuario1, usuario2);
 
         Mockito.when(coordenadorServico.listarProfessores(ArgumentMatchers.anyString())).thenReturn(mockUsuarios);
@@ -229,9 +247,13 @@ public class CoordenadorControladorTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1))
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].nomeCompleto").value("Professor 1"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].email").value("professor1@exemplo.com"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].endereco.rua").value("Rua Exemplo"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].endereco.cidade").value("Cidade Exemplo"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(2))
                 .andExpect(MockMvcResultMatchers.jsonPath("$[1].nomeCompleto").value("Professor 2"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$[1].email").value("professor2@exemplo.com"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$[1].email").value("professor2@exemplo.com"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[1].endereco.rua").value("Avenida Exemplo"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[1].endereco.cidade").value("Outra Cidade"));
     }
 
     @Test
