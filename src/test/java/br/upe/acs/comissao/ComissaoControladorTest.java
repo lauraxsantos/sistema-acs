@@ -126,6 +126,39 @@ public class ComissaoControladorTest {
                 .andExpect(jsonPath("$.requisicoes[1].status").value("TRANSITO"));
     }
 
+    @Test
+    @WithMockUser
+    public void listarRequisicoesPaginadasConcluidasTest() throws Exception {
+        when(jwtService.extractUsername(ArgumentMatchers.anyString()))
+                .thenReturn("comissao@example.com");
+
+        Map<String, Object> mockResponse = Map.of(
+                "total", 1,
+                "requisicoes", List.of(
+                        Map.of("id", 1, "status", "ACEITO")
+                )
+        );
+
+
+        when(comissaoServico.listarRequisicoesPaginadasConcluidas(
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyInt(),
+                ArgumentMatchers.anyInt()
+        )).thenReturn(mockResponse);
+
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/comissao/concluidas")
+                        .header("Authorization", token)
+                        .param("pagina", "0")
+                        .param("quantidade", "10")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.requisicoes").isArray())
+                .andExpect(jsonPath("$.requisicoes[0].status").value("ACEITO"));
+    }
+
+
 
     @Test
     @WithMockUser
