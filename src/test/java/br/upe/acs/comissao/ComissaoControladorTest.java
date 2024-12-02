@@ -93,6 +93,42 @@ public class ComissaoControladorTest {
 
     @Test
     @WithMockUser
+    public void listarRequisicoesPaginadasTransitoTest() throws Exception {
+
+        when(jwtService.extractUsername(ArgumentMatchers.anyString()))
+                .thenReturn("comissao@example.com");
+
+        Map<String, Object> mockResponse = Map.of(
+                "total", 2,
+                "requisicoes", List.of(
+                        Map.of("id", 1, "status", "TRANSITO"),
+                        Map.of("id", 2, "status", "TRANSITO")
+                )
+        );
+
+
+        when(comissaoServico.listarRequisicoesPaginadasTransito(
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyInt(),
+                ArgumentMatchers.anyInt()
+        )).thenReturn(mockResponse);
+
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/comissao/transito")
+                        .header("Authorization", token)
+                        .param("pagina", "0")
+                        .param("quantidade", "10")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.requisicoes").isArray())
+                .andExpect(jsonPath("$.requisicoes[0].status").value("TRANSITO"))
+                .andExpect(jsonPath("$.requisicoes[1].status").value("TRANSITO"));
+    }
+
+
+    @Test
+    @WithMockUser
     public void avaliarCertificadosTest() throws Exception {
         Long certificadoId = 1L;
         CertificadoStatusEnum status = CertificadoStatusEnum.CONCLUIDO;
@@ -173,7 +209,7 @@ public class ComissaoControladorTest {
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(requisicaoId))
-                .andExpect(jsonPath("$.requisicaoStatus").value(status.name()))  // Alteração aqui
+                .andExpect(jsonPath("$.requisicaoStatus").value(status.name()))
                 .andExpect(jsonPath("$.observacao").value(observacao));
     }
 
