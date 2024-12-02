@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -85,6 +86,43 @@ public class CoordenadorControladorTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[0].status").value("PENDENTE"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[1].curso").value("Engenharia"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[1].status").value("APROVADO"));
+    }
+
+    @Test
+    @WithMockUser
+    public void listarRequisicoesPaginadasTest() throws Exception {
+        Mockito.when(jwtService.extractUsername(ArgumentMatchers.anyString()))
+                .thenReturn("email_do_coordenador@exemplo.com");
+
+        Map<String, Object> mockResponse = Map.of(
+                "total", 3,
+                "requisicoes", List.of(
+                        Map.of("id", 1, "curso", "Engenharia de Software", "status", "PENDENTE"),
+                        Map.of("id", 2, "curso", "Engenharia de Software", "status", "PENDENTE"),
+                        Map.of("id", 3, "curso", "Engenharia de Software", "status", "PENDENTE")
+                )
+        );
+
+
+        Mockito.when(coordenadorServico.listarRequisicoesPaginadasCurso(
+                ArgumentMatchers.eq("email_do_coordenador@exemplo.com"),
+                ArgumentMatchers.eq(0),
+                ArgumentMatchers.eq(10)
+        )).thenReturn(mockResponse);
+
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/coordenador")
+                        .header("Authorization", token)
+                        .param("pagina", "0")
+                        .param("quantidade", "10")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.total").value(3))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[0].curso").value("Engenharia de Software"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[0].status").value("PENDENTE"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[1].status").value("PENDENTE"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[2].status").value("PENDENTE"));
     }
 
     @Test
