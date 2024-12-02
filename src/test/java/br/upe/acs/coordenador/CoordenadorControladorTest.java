@@ -127,6 +127,47 @@ public class CoordenadorControladorTest {
 
     @Test
     @WithMockUser
+    public void listarRequisicoesPaginadasComissaoTest() throws Exception {
+
+        Mockito.when(jwtService.extractUsername(ArgumentMatchers.anyString()))
+                .thenReturn("email_do_coordenador@exemplo.com");
+
+
+        Map<String, Object> mockResponse = Map.of(
+                "total", 4,
+                "requisicoes", List.of(
+                        Map.of("id", 1, "curso", "Engenharia de Software", "status", "ACEITO"),
+                        Map.of("id", 2, "curso", "Engenharia de Software", "status", "PENDENTE"),
+                        Map.of("id", 3, "curso", "Engenharia de Software", "status", "ACEITO"),
+                        Map.of("id", 4, "curso", "Engenharia de Software", "status", "NEGADO")
+                )
+        );
+
+
+        Mockito.when(coordenadorServico.listarRequisicoesComissao(
+                ArgumentMatchers.eq("email_do_coordenador@exemplo.com"),
+                ArgumentMatchers.eq(0),
+                ArgumentMatchers.eq(10)
+        )).thenReturn(mockResponse);
+
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/coordenador/requisicoes/comissao")
+                        .header("Authorization", token)
+                        .param("pagina", "0")
+                        .param("quantidade", "10")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.total").value(4))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[0].curso").value("Engenharia de Software"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[0].status").value("ACEITO"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[1].status").value("PENDENTE"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.requisicoes[3].status").value("NEGADO"));
+    }
+
+
+    @Test
+    @WithMockUser
     public void listarComissaoTest() throws Exception {
         Mockito.when(jwtService.extractUsername(ArgumentMatchers.anyString()))
                 .thenReturn("email_do_coordenador@exemplo.com");
