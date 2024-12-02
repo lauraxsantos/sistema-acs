@@ -13,14 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
+import br.upe.acs.dominio.enums.EixoEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -70,7 +65,7 @@ public class RequisicaoControladorTest {
     private HttpServletRequest request; 
 
     @InjectMocks
-    private RequisicaoControladorTest requisicaoController; // substitua pelo nome correto do seu controlador
+    private RequisicaoControladorTest requisicaoController;
 
     @BeforeEach
     public void setUp() {
@@ -80,7 +75,7 @@ public class RequisicaoControladorTest {
     @Test
     @WithMockUser
     public void testListarRequisicoes() throws Exception {
-        // Crie um objeto de requisição com base na estrutura JSON fornecida
+
         Requisicao requisicao1 = new Requisicao();
         requisicao1.setId(1L);
         requisicao1.setIdRequisicao("123");
@@ -89,7 +84,7 @@ public class RequisicaoControladorTest {
         requisicao1.setStatusRequisicao(RequisicaoStatusEnum.RASCUNHO);
         requisicao1.setObservacao("observação exemplo");
 
-        // Adiciona um certificado à requisição
+
         Certificado certificado = new Certificado();
         certificado.setId(1L);
         certificado.setTitulo("Título Exemplo");
@@ -99,11 +94,10 @@ public class RequisicaoControladorTest {
         
         requisicao1.setCertificados(List.of(certificado));
 
-        // Configura o comportamento do serviço simulado
         when(servico.listarRequisicoes()).thenReturn(List.of(requisicao1));
                
-        // Realiza a requisição GET e verifica o status e o conteúdo da resposta
-        mockMvc.perform(get("/api/requisicao") // substitua pelo endpoint real
+
+        mockMvc.perform(get("/api/requisicao")
         		 .header("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9." +
                          "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
                          "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0")
@@ -121,7 +115,7 @@ public class RequisicaoControladorTest {
                 .andExpect(jsonPath("$[0].certificados[0].statusCertificado").value(certificado.getStatusCertificado().toString()))
                 .andExpect(jsonPath("$[0].certificados[0].cargaHoraria").value(certificado.getCargaHoraria()));
 
-        // Verifica se o método do serviço foi chamado
+
         verify(servico, times(1)).listarRequisicoes();
      }
     
@@ -155,7 +149,7 @@ public class RequisicaoControladorTest {
         requisicao.setCertificados(List.of(certificado));
         requisicao2.setCertificados(List.of(certificado));
         
-        // Simulando o retorno do serviço
+
         Map<String, Object> resultadoEsperado = new HashMap<>();
         resultadoEsperado.put("paginaAtual", pagina);
         resultadoEsperado.put("totalItems", 2);
@@ -181,7 +175,7 @@ public class RequisicaoControladorTest {
     
     @Test
     @WithMockUser
-    void listarRequisicoesPorAlunoPaginadas_deveRetornarPaginacaoCorreta() throws Exception {
+    void listarRequisicoesPorAlunoPaginadasTest() throws Exception {
         Long alunoId = 1L;
         int pagina = 0;
         int quantidade = 10;
@@ -359,6 +353,54 @@ public class RequisicaoControladorTest {
                 .andExpect(status().isNoContent());
 
         verify(servico, times(1)).excluirRequisicao(requisicaoId, email);
+    }
+
+    @Test
+    @WithMockUser
+    public void listarRequisicaoPorAlunoTest() throws Exception {
+        Long alunoId = 1L;
+        int pagina = 0;
+        int quantidade = 10;
+        EixoEnum eixo = EixoEnum.ENSINO;
+
+        String token = "Bearer eyJhbGciOiJIUzI1NiJ9." +
+                "eyJlbWFpbCI6ImVtYWlsX2RvX3VzdWFyaW9AZXhhbXBsZS5jb20ifQ." +
+                "L3Zf85Hz4MF_yS5nByo2lY9GSCeZpmfrCbO_TnJQ-I0";
+
+        Requisicao requisicao = new Requisicao();
+        requisicao.setId(152L);
+        requisicao.setIdRequisicao(null);
+        requisicao.setStatusRequisicao(RequisicaoStatusEnum.TRANSITO);
+        requisicao.setCriacao(new Date());
+        requisicao.setDataDeSubmissao(new Date());
+        requisicao.setStatusRequisicao(RequisicaoStatusEnum.TRANSITO);
+        requisicao.setToken("token123");
+
+        List<Requisicao> requisicoes = Arrays.asList(requisicao);
+
+        Map<String, Object> requisicoesMap = new HashMap<>();
+        requisicoesMap.put("requisicoes", requisicoes);
+        requisicoesMap.put("paginaAtual", 0);
+        requisicoesMap.put("totalItens", 1);
+        requisicoesMap.put("totalPaginas", 1);
+
+        when(servico.listarRequisicoesPorAlunoPaginadasEixo(alunoId, eixo, pagina, quantidade)).thenReturn(requisicoesMap);
+
+        mockMvc.perform(get("/api/requisicao/eixo")
+                        .param("alunoId", alunoId.toString())
+                        .param("pagina", String.valueOf(pagina))
+                        .param("quantidade", String.valueOf(quantidade))
+                        .param("eixo", eixo.toString())
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requisicoes.size()").value(requisicoes.size()))
+                .andExpect(jsonPath("$.requisicoes[0].id").value(152L))
+                .andExpect(jsonPath("$.requisicoes[0].idRequisicao").doesNotExist())
+                .andExpect(jsonPath("$.requisicoes[0].statusRequisicao").value("TRANSITO"))
+                .andExpect(jsonPath("$.paginaAtual").value(0))
+                .andExpect(jsonPath("$.totalItens").value(1))
+                .andExpect(jsonPath("$.totalPaginas").value(1));
     }
 
 

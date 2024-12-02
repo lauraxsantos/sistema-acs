@@ -47,7 +47,27 @@ public class ComissaoServico {
 				.map(RequisicaoSimplesResposta::new).toList());
 		return gerarPaginacaoRequisicoes(requisicoesComissao, pagina, quantidade);
 	}
-    
+
+	public Map<String, Object> listarRequisicoesPaginadasTransito(String email, int pagina, int quantidade){
+		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
+		List<RequisicaoSimplesResposta> requisicoesComissao = new ArrayList<>(comissao.getRequisicoesComissao().stream()
+				.filter(requisicao -> !requisicao.isArquivada())
+				.filter(requisicao -> requisicao.getStatusRequisicao() == RequisicaoStatusEnum.TRANSITO)
+				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
+				.map(RequisicaoSimplesResposta::new).toList());
+		return gerarPaginacaoRequisicoes(requisicoesComissao, pagina, quantidade);
+	}
+
+	public Map<String, Object> listarRequisicoesPaginadasConcluidas(String email, int pagina, int quantidade){
+		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
+		List<RequisicaoSimplesResposta> requisicoesComissao = new ArrayList<>(comissao.getRequisicoesComissao().stream()
+				.filter(requisicao -> !requisicao.isArquivada())
+				.filter(requisicao -> requisicao.getStatusRequisicao() != RequisicaoStatusEnum.TRANSITO)
+				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
+				.map(RequisicaoSimplesResposta::new).toList());
+		return gerarPaginacaoRequisicoes(requisicoesComissao, pagina, quantidade);
+	}
+
     public Certificado avaliarCertificado(Long certificadoId, String email, CertificadoStatusEnum status, String observacao, float cargaHoraria) {
 		Usuario comissao = usuarioServico.buscarUsuarioPorEmail(email);
 		
@@ -100,6 +120,7 @@ public class ComissaoServico {
             );
     	}
     	
+    	
     	requisicao.setStatusRequisicao(status);
     	requisicao.setObservacao(observacao);
     	requisicaoRepositorio.save(requisicao);
@@ -107,6 +128,22 @@ public class ComissaoServico {
         CompletableFuture.runAsync(() -> emailServico.enviarEmailAlteracaoStatusRequisicao(requisicao));
             	
 		return requisicao;    	
+    	
+    }
+    
+    public List<Certificado> listarCertificadosPorAluno(Long requisicaoId){
+    	Requisicao requisicao = requisicaoServico.buscarRequisicaoPorId(requisicaoId);
+    	Usuario aluno = requisicao.getUsuario();
+    	
+    	List<Certificado> certificados = new ArrayList<Certificado>();
+    	
+    	for(Requisicao req : aluno.getRequisicoes()) {
+    		for (Certificado cert : req.getCertificados()) {
+    			certificados.add(cert);    			
+    		}
+    	}
+    	
+		return certificados.stream().filter(certificado -> certificado.getStatusCertificado() == CertificadoStatusEnum.CONCLUIDO).toList();
     	
     }
 

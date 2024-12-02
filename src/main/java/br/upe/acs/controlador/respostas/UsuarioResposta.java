@@ -27,6 +27,8 @@ public class UsuarioResposta {
 
 	private final boolean verificado;
 
+	private final EnderecoResposta endereco;
+
 	public UsuarioResposta(Usuario usuario) {
 		this.id = usuario.getId();
 		this.nomeCompleto = usuario.getNomeCompleto();
@@ -37,5 +39,6 @@ public class UsuarioResposta {
 		this.curso = new CursoResposta(usuario.getCurso());
 		this.periodo = usuario.getPeriodo();
 		this.verificado = usuario.isVerificado();
+		this.endereco = new EnderecoResposta(usuario.getEndereco());
 	}
 }

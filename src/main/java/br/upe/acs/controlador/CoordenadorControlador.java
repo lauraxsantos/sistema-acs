@@ -28,7 +28,7 @@ public class CoordenadorControlador {
 	
 	public final CoordenadorServico servico;
 	
-	@Operation(summary = "Listar todas as requisicoes por curso")
+	@Operation(summary = "Listar requisicoes sem comissao por curso")
     @GetMapping
     public  ResponseEntity<Map<String,Object>> listarRequisicoesPaginadas(
             HttpServletRequest request,
@@ -37,6 +37,17 @@ public class CoordenadorControlador {
     ) {
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
         return ResponseEntity.ok(servico.listarRequisicoesPaginadasCurso(email, pagina, quantidade));
+    }
+	
+	@Operation(summary = "Listar requisicoes com comissao por curso")
+    @GetMapping("/requisicoes/comissao")
+    public  ResponseEntity<Map<String,Object>> listarRequisicoesPaginadasComissao(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int quantidade
+    ) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        return ResponseEntity.ok(servico.listarRequisicoesComissao(email, pagina, quantidade));
     }
 	
 	@Operation(summary = "Listar comissão por curso")
@@ -58,5 +69,7 @@ public class CoordenadorControlador {
     	servico.mandarRequisicaoComissao(requisicaoId, comissaoId);
     	return ResponseEntity.noContent().build();    	
     }
+    
+    
 
 }

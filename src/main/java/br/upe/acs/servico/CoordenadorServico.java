@@ -48,6 +48,18 @@ public class CoordenadorServico {
 		List<RequisicaoSimplesResposta> requisicoesCurso = new ArrayList<>(requisicaoServico.listarRequisicoes().stream()
 				.filter(requisicao -> !requisicao.isArquivada())
 				.filter(requisicao -> requisicao.getCurso() == coordenador.getCurso())
+				.filter(requisicao -> requisicao.getComissao() == null)
+				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
+				.map(RequisicaoSimplesResposta::new).toList());
+		return gerarPaginacaoRequisicoes(requisicoesCurso, pagina, quantidade);
+	}
+	
+	public Map<String, Object> listarRequisicoesComissao(String email, int pagina, int quantidade){
+		Usuario coordenador = usuarioServico.buscarUsuarioPorEmail(email);
+		List<RequisicaoSimplesResposta> requisicoesCurso = new ArrayList<>(requisicaoServico.listarRequisicoes().stream()
+				.filter(requisicao -> !requisicao.isArquivada())
+				.filter(requisicao -> requisicao.getCurso() == coordenador.getCurso())
+				.filter(requisicao -> requisicao.getComissao() != null)
 				.sorted(Comparator.comparing(Requisicao::getStatusRequisicao))
 				.map(RequisicaoSimplesResposta::new).toList());
 		return gerarPaginacaoRequisicoes(requisicoesCurso, pagina, quantidade);
@@ -66,4 +78,6 @@ public class CoordenadorServico {
     	CompletableFuture.runAsync(() -> emailServico.enviarEmailRecebimentoRequisicao(requisicao));
   	    	
   }  
+    
+   
 }

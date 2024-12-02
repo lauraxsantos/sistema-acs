@@ -1,6 +1,8 @@
 package br.upe.acs.controlador;
 
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +41,28 @@ public class ComissaoControlador {
         String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
         return ResponseEntity.ok(servico.listarRequisicoesPaginadas(email, pagina, quantidade));
     }
+
+    @Operation(summary = "Listar todas as requisicoes transito")
+    @GetMapping("/transito")
+    public  ResponseEntity<?> listarRequisicoesPaginadasTransito(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int quantidade
+    ) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        return ResponseEntity.ok(servico.listarRequisicoesPaginadasTransito(email, pagina, quantidade));
+    }
+
+    @Operation(summary = "Listar todas as requisicoes Concluidas")
+    @GetMapping("/concluidas")
+    public  ResponseEntity<?> listarRequisicoesPaginadasConcluidas(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int quantidade
+    ) {
+        String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
+        return ResponseEntity.ok(servico.listarRequisicoesPaginadasConcluidas(email, pagina, quantidade));
+    }
     
     @Operation(summary = "Avaliar Certificados")
     @PostMapping("/certificados")
@@ -63,6 +87,12 @@ public class ComissaoControlador {
     {
     	String email = jwtService.extractUsername(request.getHeader("Authorization").substring(7));
     	return ResponseEntity.ok(new RequisicaoResposta(servico.avaliarRequisicao(requisicaoId, email, status, observacao)));    	
+    }
+    
+    @Operation(summary = "Listar Certificados Aprovados do Aluno")    
+    @GetMapping("/aluno/certificados")
+    public ResponseEntity<List<CertificadoResposta>> listarCertificadosPorAluno(@RequestParam Long requisicaoId){
+    	return ResponseEntity.ok(servico.listarCertificadosPorAluno(requisicaoId).stream().map(CertificadoResposta::new).toList());
     }
 
 }
