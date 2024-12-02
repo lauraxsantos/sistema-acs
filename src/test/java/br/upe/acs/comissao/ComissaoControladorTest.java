@@ -66,9 +66,9 @@ public class ComissaoControladorTest {
         Map<String, Object> mockResponse = Map.of(
                 "total", 3,
                 "requisicoes", List.of(
-                        Map.of("id", 1, "status", "PENDENTE"),
-                        Map.of("id", 2, "status", "APROVADO"),
-                        Map.of("id", 3, "status", "REPROVADO")
+                        Map.of("id", 1, "status", "TRANSITO"),
+                        Map.of("id", 2, "status", "ACEITO"),
+                        Map.of("id", 3, "status", "NEGADO")
                 )
         );
 
@@ -86,9 +86,9 @@ public class ComissaoControladorTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(3))
                 .andExpect(jsonPath("$.requisicoes").isArray())
-                .andExpect(jsonPath("$.requisicoes[0].status").value("PENDENTE"))
-                .andExpect(jsonPath("$.requisicoes[1].status").value("APROVADO"))
-                .andExpect(jsonPath("$.requisicoes[2].status").value("REPROVADO"));
+                .andExpect(jsonPath("$.requisicoes[0].status").value("TRANSITO"))
+                .andExpect(jsonPath("$.requisicoes[1].status").value("ACEITO"))
+                .andExpect(jsonPath("$.requisicoes[2].status").value("NEGADO"));
     }
 
     @Test
